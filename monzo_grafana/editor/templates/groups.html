@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Groups</h1>
+
+{% if groups %}
+<table>
+  <tr><th>ID</th><th>Attributes</th><th></th></tr>
+  {% for g in groups %}
+  <tr>
+    <td><code>{{ g.id }}</code></td>
+    <td>{{ g.summary }}</td>
+    <td>
+      <form method="POST" action="/groups/delete" style="display:inline">
+        <input type="hidden" name="id" value="{{ g.id }}">
+        <button type="submit" class="danger">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">No groups yet — define one below.</p>
+{% endif %}
+
+<h2 style="margin-top:2em">Add or update a group</h2>
+<form method="POST" action="/groups/save">
+  <label>ID (used in rules — e.g. <code>iceland_2025</code>)</label>
+  <input name="id" type="text" required>
+
+  <label>Kind</label>
+  <input name="kind" type="text" placeholder="holiday | rent | project">
+
+  <label>Display name</label>
+  <input name="name" type="text">
+
+  <label>Starts at (YYYY-MM-DD)</label>
+  <input name="starts_at" type="date">
+
+  <label>Ends at (YYYY-MM-DD)</label>
+  <input name="ends_at" type="date">
+
+  <label>Budget (optional, gross)</label>
+  <input name="budget" type="number" step="0.01">
+
+  <label style="font-weight:600">
+    <input name="amortise" type="checkbox" value="1" style="width:auto; margin-right:0.5em">
+    Amortise: spread the group's net cost evenly across [starts_at, ends_at]
+  </label>
+  <p style="color:#666; font-size:0.9em; margin-top:0">
+    Use this for multi-payment cases like rent. When checked, member
+    transactions' own amortise_months is ignored — the group sums them
+    and divides by the date range instead.
+  </p>
+
+  <p style="margin-top:1.5em">
+    <button type="submit">Save group</button>
+  </p>
+</form>
+{% endblock %}

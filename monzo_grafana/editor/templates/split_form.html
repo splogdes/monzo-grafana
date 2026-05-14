@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Split transaction</h1>
+<div class="tx">
+  <strong>{{ parent.merchant or '?' }}</strong>
+  &nbsp;&nbsp;£{{ '%.2f'|format(parent.amount) }}<br>
+  <span style="color:#666">{{ parent.description or '' }}</span><br>
+  <small>{{ parent.date }} · cat <code>{{ parent.category or '?' }}</code> · tx <code>{{ tx_id }}</code></small>
+</div>
+
+<p style="color:#666; font-size:0.92em">
+  Allocate the parent amount across multiple parts. Each part lands as a
+  synthetic row on account <code>ledger</code> with its own category /
+  group / offset. The parent is excluded from spend totals while a split
+  exists. Sum of parts must equal £{{ '%.2f'|format(parent.amount) }} within 1p.
+</p>
+
+<form method="POST" action="/split/save">
+  <input type="hidden" name="transaction_id" value="{{ tx_id }}">
+  <input type="hidden" name="parent_amount" value="{{ '%.2f'|format(parent.amount) }}">
+
+  <table id="parts-table">
+    <thead><tr>
+      <th>Amount £</th><th>Category</th><th>Group</th>
+      <th>Offset for tx</th><th>Offset for group</th><th>Note</th><th></th>
+    </tr></thead>
+    <tbody id="parts-body">
+    {% for p in parts %}
+      <tr class="part">
+        <td><input name="amount" type="number" step="0.01" class="amount-input" value="{{ '%.2f'|format(p.amount or 0) }}" style="width:6.5em"></td>
+        <td><input name="category" type="text" list="cat-options" value="{{ p.category or '' }}" style="width:9em"></td>
+        <td><input name="group" type="text" list="group-options" value="{{ p.group or '' }}" style="width:9em"></td>
+        <td>
+          <select name="offset_for_tx" style="width:14em">
+            <option value="">— none —</option>
+            {% set selected = p.offset_for_tx or '' %}
+            {% if selected and selected not in offset_tx_ids %}
+              <option value="{{ selected }}" selected>{{ selected }} (older)</option>
+            {% endif %}
+            {% for t in recent_outgoings %}
+              <option value="{{ t.id }}" {% if t.id == selected %}selected{% endif %}>{{ t.date }} · {{ t.merchant }} · £{{ '%.2f'|format(t.amount) }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td><input name="offset_for_group" type="text" list="group-options" value="{{ p.offset_for_group or '' }}" style="width:9em"></td>
+        <td><input name="note" type="text" value="{{ p.note or '' }}" style="width:11em"></td>
+        <td><button type="button" class="danger remove-part" title="Remove part">×</button></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <datalist id="cat-options">
+    {% for c in category_options %}<option value="{{ c }}">{% endfor %}
+  </datalist>
+  <datalist id="group-options">
+    {% for g in group_options %}<option value="{{ g }}">{% endfor %}
+  </datalist>
+
+  <p><button type="button" id="add-part" class="secondary">+ Add part</button></p>
+
+  <p class="running-total" style="font-size:1.05em; margin-top:1em">
+    Parts sum: £<span id="sum-display">0.00</span>
+    &nbsp;&middot;&nbsp; Parent: £{{ '%.2f'|format(parent.amount) }}
+    &nbsp;&middot;&nbsp; Δ <span id="delta-display" style="font-weight:600">0.00</span>
+  </p>
+
+  <p style="margin-top:1.5em">
+    <button type="submit">Save split (auto-applies)</button>
+    <a href="/splits" style="margin-left:1em">Cancel</a>
+  </p>
+</form>
+
+{% if existing %}
+<form method="POST" action="/split/delete" style="margin-top:2em"
+      onsubmit="return confirm('Delete this split entirely? The parent transaction will be re-categorised on the next retag.');">
+  <input type="hidden" name="transaction_id" value="{{ tx_id }}">
+  <button type="submit" class="danger">Delete split entirely</button>
+</form>
+{% endif %}
+
+<script>
+  (function () {
+    const parentAmount = {{ '%.2f'|format(parent.amount) }};
+    const partsBody  = document.getElementById('parts-body');
+    const addBtn     = document.getElementById('add-part');
+    const sumEl      = document.getElementById('sum-display');
+    const deltaEl    = document.getElementById('delta-display');
+    const offsetTxBase = `{{ offset_tx_base_html|safe }}`;
+
+    function updateTotals() {
+      let sum = 0;
+      partsBody.querySelectorAll('input.amount-input').forEach(function (i) {
+        const v = parseFloat(i.value);
+        if (!isNaN(v)) sum += v;
+      });
+      sumEl.textContent = sum.toFixed(2);
+      const delta = sum - parentAmount;
+      deltaEl.textContent = delta.toFixed(2);
+      deltaEl.style.color = Math.abs(delta) > 0.01 ? '#ef4444' : '#15803d';
+    }
+
+    function bindRow(tr) {
+      tr.querySelectorAll('input, select').forEach(function (el) {
+        el.addEventListener('input', updateTotals);
+        el.addEventListener('change', updateTotals);
+      });
+      const rm = tr.querySelector('.remove-part');
+      if (rm) {
+        rm.addEventListener('click', function () {
+          if (partsBody.querySelectorAll('tr.part').length > 1) {
+            tr.remove();
+            updateTotals();
+          }
+        });
+      }
+    }
+
+    partsBody.querySelectorAll('tr.part').forEach(bindRow);
+
+    addBtn.addEventListener('click', function () {
+      const tr = document.createElement('tr');
+      tr.className = 'part';
+      tr.innerHTML =
+        "<td><input name='amount' type='number' step='0.01' class='amount-input' value='0.00' style='width:6.5em'></td>" +
+        "<td><input name='category' type='text' list='cat-options' style='width:9em'></td>" +
+        "<td><input name='group' type='text' list='group-options' style='width:9em'></td>" +
+        "<td><select name='offset_for_tx' style='width:14em'><option value=''>— none —</option>" + offsetTxBase + "</select></td>" +
+        "<td><input name='offset_for_group' type='text' list='group-options' style='width:9em'></td>" +
+        "<td><input name='note' type='text' style='width:11em'></td>" +
+        "<td><button type='button' class='danger remove-part' title='Remove part'>×</button></td>";
+      partsBody.appendChild(tr);
+      bindRow(tr);
+      updateTotals();
+    });
+
+    updateTotals();
+  })();
+</script>
+{% endblock %}

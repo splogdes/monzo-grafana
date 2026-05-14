@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Splits</h1>
+<p style="color:#666; font-size:0.92em">
+  Splits break one Monzo transaction into multiple synthetic rows on
+  account <code>ledger</code>, each with its own category / group / offset.
+  Use for bulk transfers that mix multiple intents (income + holiday
+  settlement, groceries + subscriptions, etc.). Parts must sum to the
+  parent's amount.
+</p>
+
+{% if splits %}
+<table>
+  <tr><th>Transaction</th><th>Parts</th><th></th></tr>
+  {% for s in splits %}
+  <tr>
+    <td>
+      <code>{{ s.transaction_id }}</code><br>
+      {% if s.detail %}
+        <small style="color:#555">{{ s.detail.merchant or '?' }} · £{{ '%.2f'|format(s.detail.amount) }} · {{ s.detail.date }}</small>
+      {% else %}
+        <small style="color:#a00">(tx not in DB)</small>
+      {% endif %}
+    </td>
+    <td>
+      {% if s.part_lines %}{{ s.part_lines|join("<br>")|safe }}{% else %}<em>(no parts)</em>{% endif %}
+    </td>
+    <td style="white-space:nowrap">
+      <a href="/split?tx_id={{ s.transaction_id|urlencode }}" class="btn-link">Edit</a>
+      <form method="POST" action="/split/delete" style="display:inline; margin-left:0.4em">
+        <input type="hidden" name="transaction_id" value="{{ s.transaction_id }}">
+        <button type="submit" class="danger">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">No splits yet. Open a transaction's <em>Add rule</em> page
+and follow the &lsquo;split this transaction&rsquo; link, or go to
+<a href="/split">/split?tx_id=&hellip;</a> directly.</p>
+{% endif %}
+{% endblock %}

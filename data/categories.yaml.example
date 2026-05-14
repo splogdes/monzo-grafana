@@ -1,0 +1,161 @@
+# Override rules + groups for the Monzo personal-finance dashboard.
+#
+# After editing this file, the poller's auto-retag re-applies it to every
+# transaction already in Postgres (no Monzo round-trip). The next poll picks
+# up new rules for any future transactions.
+#
+# ===========================================================================
+# overrides:  per-transaction rules. First matching rule wins.
+# ===========================================================================
+#
+# Matchers (most specific first; pick exactly one per rule):
+#   transaction_id:       exact match against the Monzo transaction id
+#   merchant:             exact match against the merchant tag
+#   merchant_pattern:     Python regex against the merchant
+#   description_pattern:  Python regex against the description
+#
+# Actions (any combination — at least one required):
+#   category:           new effective category. Special values:
+#                         internal — excluded from spend/income totals
+#                         savings  — excluded from spend totals
+#   amortise_months /
+#   amortise_weeks /
+#   amortise_days:      spread the transaction's net cost over N units in
+#                       the smoothed views. Daily slices internally.
+#   my_share:           fraction of the amount that's actually yours.
+#                       Accepts "1/3", "0.5", numeric. Default 1.0.
+#                       Use for shared bills with housemates.
+#   group:              tag this transaction into a group (defined below).
+#                       Used for holiday/lease aggregation.
+#   offset_for_tx:      this transaction is a credit against another tx
+#                       (e.g. a refund of a specific purchase). The row
+#                       itself drops out of totals; its amount reduces
+#                       the target's net cost.
+#   offset_for_group:   this transaction reduces the net cost of a whole
+#                       group (e.g. a friend's holiday repayment).
+
+overrides:
+  # ───── re-categorise ─────
+  - merchant: "Tesco"
+    category: groceries
+  - merchant_pattern: "(?i)spotify|netflix|disney\\+|prime video"
+    category: subscriptions
+
+  # ───── exclude internal money movement ─────
+  - merchant: "MR OLIVER DAVID COSGROVE"
+    category: internal
+  - description_pattern: "(?i)bob refund for dinner"
+    category: internal
+
+  # ───── amortise large purchases (per-transaction) ─────
+  - merchant: "Apple"
+    category: subscriptions
+    amortise_months: 12
+  - merchant: "Klarna"
+    amortise_days: 14
+
+  # ───── shared bills: only 1/3 is your true cost ─────
+  - merchant: "Octopus Energy"
+    category: bills
+    amortise_months: 1
+    my_share: "1/3"
+
+  # ───── holiday: tag spend into the group, repayments offset the group ─────
+  - merchant: "Booking.com"
+    category: holidays
+    group: iceland_2025
+  - transaction_id: "tx_REPAY_FRIEND_ICELAND"
+    offset_for_group: iceland_2025
+
+  # ───── multi-payment rent + refund as a single amortised group ─────
+  # Tag every rent payment with `group: rent_2025_lease` and any refund with
+  # `offset_for_group: rent_2025_lease`. The group's amortise: true (below)
+  # sums the payments, subtracts refunds, and spreads the net evenly across
+  # the lease range — no per-transaction amortise_months needed.
+  - merchant: "Rentals UK Ltd"
+    group: rent_2025_lease
+  - transaction_id: "tx_RENT_REFUND_2025"
+    offset_for_group: rent_2025_lease
+
+  # ───── single-transaction refund (older pattern, still supported) ─────
+  - transaction_id: "tx_REFUND_OF_LUMP"
+    offset_for_tx: "tx_LUMP_SUM_PURCHASE"
+
+# ===========================================================================
+# groups:  named buckets for trips, leases, projects.
+# ===========================================================================
+#
+# Keys per group:
+#   kind:       'holiday' | 'rent' | 'project' (free-form, used as the
+#               category label on the smoothed timeline)
+#   name:       human-readable label
+#   starts_at:  YYYY-MM-DD
+#   ends_at:    YYYY-MM-DD
+#   budget:     optional gross budget (for the gauge panel)
+#   amortise:   if true (and dates set), the group's net_cost is spread
+#               evenly across each day in [starts_at, ends_at]. Member
+#               transactions' own amortise_days is then ignored.
+
+groups:
+  iceland_2025:
+    kind: holiday
+    name: Iceland 2025
+    starts_at: 2025-08-12
+    ends_at: 2025-08-19
+    budget: 800
+
+  rent_2025_lease:
+    kind: rent
+    name: 2025 Lease
+    starts_at: 2025-08-01
+    ends_at: 2026-07-31
+    amortise: true
+
+# ===========================================================================
+# splits:  break one Monzo transaction into multiple synthetic parts.
+# ===========================================================================
+#
+# Use when a single transaction bundles multiple intents — e.g. a bulk
+# Santander→Monzo transfer that's part income + part holiday-repayment, or a
+# single Amazon charge that mixes groceries with a subscription.
+#
+# The poller's sync_splits() materialises each part as a synthetic row on
+# account_id='ledger' with a deterministic id (`{parent}__split_{N}`), and
+# marks the parent transaction with category='split' so it drops out of
+# spend/income totals. Net-worth views are unaffected — the parent still
+# counts on Monzo's balance because real money moved.
+#
+# Rules per split:
+#   - The sum of parts' amounts must match the parent's amount within £0.01.
+#     A mis-summed split is logged and skipped (parent stays normal).
+#   - Each part has an `amount` (signed); inherits its sign from the parent
+#     by convention but it's not enforced.
+#   - Per-part actions mirror the override actions (minus my_share and
+#     amortise): category, group, offset_for_tx, offset_for_group, plus an
+#     optional `note` that lands in the synthetic row's description.
+#   - If a tx_id appears in both overrides: and splits:, the split wins and
+#     the override is logged as ignored.
+#
+# The rule editor's /splits page is the easiest way to manage these — it
+# enforces the sum invariant in the browser.
+
+splits:
+  # A £500 incoming bulk transfer from Santander: £300 salary top-up, £200
+  # repayment from a friend toward the Iceland trip.
+  - transaction_id: tx_0000B5BulkTransfer
+    parts:
+      - amount: 300.00
+        category: income
+        note: salary topup
+      - amount: 200.00
+        offset_for_group: iceland_2025
+        note: Bob settling holiday
+
+  # A single £57.99 Amazon charge mixing groceries with a subscription.
+  - transaction_id: tx_0000B5AmazonBundle
+    parts:
+      - amount: -45.00
+        category: groceries
+      - amount: -12.99
+        category: subscriptions
+        note: Prime renewal

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Override rules</h1>
+
+{% if rules %}
+<table>
+  <tr><th>Match</th><th>Action</th><th></th></tr>
+  {% for r in rules %}
+  <tr>
+    <td>
+      {% if r.transaction_id %}
+        <code>{{ r.transaction_id }}</code>
+        {% set d = tx_details.get(r.transaction_id) %}
+        {% if d %}
+          <br><small style="color:#555">
+            {{ d.merchant or '?' }} · £{{ '%.2f'|format(d.amount) }} · {{ d.date }}
+            · <span style="color:#888">cat={{ d.category or '?' }}</span>
+          </small>
+        {% else %}
+          <br><small style="color:#a00">(transaction not in DB)</small>
+        {% endif %}
+      {% elif r.matcher_key %}
+        <code>{{ r.matcher_key }}={{ r[r.matcher_key] }}</code>
+      {% else %}
+        <code>(no matcher)</code>
+      {% endif %}
+    </td>
+    <td>{{ r.action_summary }}</td>
+    <td style="white-space:nowrap">
+      <a href="/edit?idx={{ loop.index0 }}" class="btn-link">Edit</a>
+      <form method="POST" action="/delete" style="display:inline; margin-left:0.4em">
+        <input type="hidden" name="idx" value="{{ loop.index0 }}">
+        <button type="submit" class="danger">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">No rules yet. Click a transaction in Grafana to add one.</p>
+{% endif %}
+
+<p style="margin-top:1.5em">
+  <a href="/new" class="btn-link">+ Add rule</a>
+</p>
+<p style="margin-top:1.5em; color:#666; font-size:0.9em">
+  Rules apply automatically when you save or delete. Use these for manual control:
+</p>
+<form method="POST" action="/apply" style="display:inline">
+  <button type="submit">Apply rules now</button>
+</form>
+<form method="POST" action="/poll" style="display:inline; margin-left:0.4em">
+  <button type="submit" class="secondary">Fetch from Monzo</button>
+</form>
+{% endblock %}

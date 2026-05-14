@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="color:#15803d">✓ {{ summary }}</h1>
+<p>You can close this tab and return to Grafana.</p>
+<p>
+  <a href="/">View all rules</a>
+  &nbsp; · &nbsp;
+  <a href="javascript:window.close()">Close tab now</a>
+</p>
+<script>
+  // Auto-close if this tab was opened by Grafana's data link.
+  // Browsers only allow window.close() on tabs opened by JS / target=_blank
+  // — fall through to the manual link otherwise.
+  setTimeout(function () { try { window.close(); } catch (e) {} }, 700);
+</script>
+{% endblock %}

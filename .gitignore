@@ -1,0 +1,27 @@
+# Secrets / runtime state
+.env
+data/tokens.json
+data/tokens.json.*
+data/categories.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build artefacts
+build/
+dist/
+*.egg-info/
+
+# Nix / direnv
+.direnv/
+.envrc.local
+
+# Editors / OS
+.DS_Store
+.vscode/
+*.swp
