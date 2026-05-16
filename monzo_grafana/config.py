@@ -46,6 +46,7 @@ class Config:
     poll_interval_minutes: int
     lookback_days: int
     categories_file: Path
+    santander_rules_file: Path
     trigger_bind: str
     trigger_port: int
 
@@ -70,6 +71,9 @@ class Config:
             poll_interval_minutes=int(os.environ.get("POLL_INTERVAL_MINUTES", "30")),
             lookback_days=int(os.environ.get("LOOKBACK_DAYS", "90")),
             categories_file=Path(os.environ.get("CATEGORIES_FILE", "categories.yaml")),
+            santander_rules_file=Path(
+                os.environ.get("SANTANDER_RULES_FILE", "data/santander_rules.yaml")
+            ),
             trigger_bind=os.environ.get("POLLER_TRIGGER_BIND", "127.0.0.1"),
             trigger_port=int(os.environ.get("POLLER_TRIGGER_PORT", "7925")),
         )

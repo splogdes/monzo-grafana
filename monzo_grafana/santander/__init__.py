@@ -1,0 +1,1 @@
+"""Santander statement export ingestion."""

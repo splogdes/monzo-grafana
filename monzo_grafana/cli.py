@@ -7,21 +7,27 @@ Subcommands:
     sync-groups   Push the YAML ``groups:`` section into the groups table
     sync-splits   Rebuild synthetic ledger rows from the YAML ``splits:`` section
     snapshot      Record an external-account balance snapshot
-    schedule      Scheduled polling loop with HTTP trigger server (default)
+    top-merchants     List the top merchants per account
+    cluster-merchants Group Santander variants and cross-reference Monzo
+    schedule          Scheduled polling loop with HTTP trigger server (default)
 """
 
 from __future__ import annotations
 
 import argparse
 
+from .cluster_merchants import cluster_merchants
 from .config import Config
 from .db.groups import sync_groups
 from .db.snapshots import record_snapshot
 from .db.splits import sync_splits
 from .db.transactions import poll, retag
+from .dry_run_rules import dry_run
 from .logging_setup import configure_logging
 from .monzo.auth import do_auth
+from .santander.importer import import_paths as import_santander_paths
 from .scheduler import run_schedule
+from .top_merchants import top_merchants
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -40,6 +46,34 @@ def _build_parser() -> argparse.ArgumentParser:
     snap.add_argument("observed_at", help="YYYY-MM-DD")
     snap.add_argument("balance", type=float)
     snap.add_argument("contributions", type=float, nargs="?", default=None)
+
+    imp = sub.add_parser("import-santander", help="Import Santander statement exports")
+    imp.add_argument("paths", nargs="*", help="Files or directories (default: cwd)")
+
+    top = sub.add_parser(
+        "top-merchants",
+        help="List the top merchants per account by transaction count",
+    )
+    top.add_argument("--limit", type=int, default=30, help="Rows per account (default: 30)")
+    top.add_argument(
+        "--min-count", type=int, default=1, help="Skip merchants with fewer rows (default: 1)"
+    )
+
+    clu = sub.add_parser(
+        "cluster-merchants",
+        help="Group Santander merchants by shared tokens and cross-reference Monzo",
+    )
+    clu.add_argument("--min-rows", type=int, default=3, help="Skip clusters with fewer rows")
+    clu.add_argument("--min-spend", type=float, default=20.0, help="Skip clusters below £N spend")
+    clu.add_argument("--output", help="Write report to file instead of stdout")
+
+    dry = sub.add_parser(
+        "dry-run-rules",
+        help="Apply the Santander rules file to live data and report what each rule matches",
+    )
+    dry.add_argument(
+        "--file", default="data/santander_rules.yaml", help="Path to the rules file"
+    )
 
     return parser
 
@@ -63,6 +97,14 @@ def main(argv: list[str] | None = None) -> None:
         sync_splits(cfg)
     elif command == "snapshot":
         record_snapshot(cfg, args.account_id, args.observed_at, args.balance, args.contributions)
+    elif command == "import-santander":
+        import_santander_paths(cfg, args.paths)
+    elif command == "top-merchants":
+        top_merchants(cfg, args.limit, args.min_count)
+    elif command == "cluster-merchants":
+        cluster_merchants(cfg, args.min_rows, args.min_spend, args.output)
+    elif command == "dry-run-rules":
+        dry_run(cfg, args.file)
     elif command == "schedule":
         run_schedule(cfg)
     else:  # pragma: no cover — argparse rejects unknown commands first

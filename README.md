@@ -19,6 +19,7 @@ Personal finance dashboard: Monzo → PostgreSQL → Grafana.
 │   ├── monzo/                # OAuth flow + transactions API client
 │   ├── rules/                # YAML loader + rule-matching engine
 │   ├── db/                   # Postgres writers (transactions, groups, splits, snapshots)
+│   ├── santander/            # Statement-export parser + idempotent importer
 │   └── editor/               # HTTP rule editor (handlers, store, Jinja2 templates)
 ├── data/                     # Runtime state (gitignored except .example)
 │   ├── categories.yaml.example
@@ -163,6 +164,15 @@ docker compose exec poller uv run monzo-poller sync-groups
 
 # Record an external account balance snapshot
 docker compose exec poller uv run monzo-poller snapshot vanguard_isa 2026-05-10 18450 17000
+
+# Import Santander statement exports (idempotent — re-run any time)
+docker compose exec poller uv run monzo-poller import-santander /app/data/santander
+
+# Or, against a single file:
+docker compose exec poller uv run monzo-poller import-santander /app/data/santander/2024-10-08_2025-04-11.txt
+
+# List the top merchants in each account (sanity-check imports / spot rule candidates)
+docker compose exec poller uv run monzo-poller top-merchants --limit 30
 
 # Re-do OAuth (Monzo's strong-customer-auth window is 5 minutes)
 docker compose exec poller uv run monzo-poller auth
@@ -314,6 +324,62 @@ docker compose exec poller uv run monzo-poller snapshot revolut_savings 2026-05-
 The four default accounts (`monzo`, `santander`, `vanguard_isa`, `revolut_savings`) are seeded by `db/init.sql`. The **ISA growth vs contributions** panel plots both balance and `contributions_to_date` so the gap shows market gain.
 
 Snapshot cadence is up to you — monthly is fine; the `net_worth_daily` view forward-fills between observations, so the line stays smooth.
+
+## Importing Santander statements
+
+Santander has no public API, so the second current account is fed from the **downloadable statement exports** (Online Banking → Statements → Download → `.txt`). Each export is a date range; downloading new ranges and re-running the importer is safe.
+
+```sh
+# Default: scan cwd for files named YYYY-MM-DD_YYYY-MM-DD.txt
+monzo-poller import-santander
+
+# Or pass explicit files / directories
+monzo-poller import-santander ~/Downloads/santander/
+monzo-poller import-santander 2025-04-11_2026-05-05.txt
+```
+
+What the import does:
+
+- Parses each block (`Date`, `Description`, `Amount`, `Balance`) and writes a row to `transactions` with `account_id='santander'`.
+- Generates a **deterministic ID** (`santander_<yyyymmdd>_<sha1[:12]>`) from the description, amount, balance, and intra-day position, so re-imports of the same file are a no-op via `ON CONFLICT DO UPDATE`.
+- Stores the latest balance for each date in `account_balances`, so the `net_worth_daily` view picks up Santander history with no manual snapshotting.
+- Runs each row through `data/santander_rules.yaml` to assign a canonical merchant name and category in one pass. Personal/financial data lives there (gitignored); start from `data/santander_rules.yaml.example`.
+
+> ⚠ The exports are latin-1 (the label/value separator is a 0xA0 byte); the parser handles this automatically.
+
+### Merchant rules (`data/santander_rules.yaml`)
+
+Santander descriptions are noisy (`TESCO STORES 1234 BATH`, `AMZN MKTP UK*ABC123`); Monzo's come pre-cleaned. To make Grafana's per-merchant panels aggregate across both accounts, the importer rewrites Santander merchants via a YAML list of regex rules:
+
+```yaml
+- canonical: Tesco
+  category:  groceries
+  regex:     '(?i)\btesco(\s+|-)(?:store|metro)'
+
+- canonical: Amazon
+  category:  shopping
+  regex:     '(?i)\b(amazon|amzn?)'
+```
+
+Rules are tested in order; first match wins. The regex sees the cleaned, title-cased form (`Tesco Stores 1234 Bath`, not `CARD PAYMENT TO TESCO STORES 1234 BATH, ON 12-03-2025`) — always use `(?i)` for safety.
+
+Workflow:
+
+```sh
+# 1. Edit data/santander_rules.yaml
+
+# 2. Preview before applying — shows per-rule hits, conflicts, unmatched rows
+monzo-poller dry-run-rules
+
+# 3. Discover new merchant families from existing data
+monzo-poller cluster-merchants --min-rows 3
+
+# 4. Apply: re-import refreshes the merchant + category columns, retag re-runs rules
+monzo-poller import-santander
+monzo-poller retag
+```
+
+`categories.yaml` overrides (per-`transaction_id`, `merchant_pattern`, etc.) still take precedence over the Santander rules file for any column they set, so existing rules keep working.
 
 ## Common commands
 

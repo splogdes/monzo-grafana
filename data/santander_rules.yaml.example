@@ -1,0 +1,174 @@
+# Santander merchant rules — copy to data/santander_rules.yaml and edit.
+#
+# Each rule is a YAML mapping with three keys:
+#   canonical: <Title Case merchant name>
+#   category:  <one of the categories in your dashboard taxonomy>
+#   regex:     <Python regex tested against prepare_for_match(description)>
+#
+# List order is significant — first match wins. Put specific rules first,
+# generic catch-alls last.
+#
+# The regex is matched against descriptions that have been:
+#   1. &amp; → &
+#   2. trailing ", ON DD-MM-YYYY" and ", N.NN XYZ Rate …" stripped
+#   3. "(VIA …)" injections stripped
+#   4. leading "CARD PAYMENT TO" / "FASTER PAYMENTS RECEIPT/PAYMENT REF" stripped
+#   5. whitespace collapsed and .title()'d
+#
+# So a raw Santander description like
+#   CARD PAYMENT TO TESCO STORES 4521 BATH, ON 12-03-2025
+# is matched against
+#   Tesco Stores 4521 Bath
+# Always use (?i) for safety against title-casing.
+
+- canonical: Tesco
+  category: groceries
+  regex: '(?i)\btesco(\s+|-)(?:store|metro)'
+
+- canonical: Sainsbury''s
+  category: groceries
+  regex: '(?i)\bsainsbury'
+
+- canonical: Waitrose & Partners
+  category: groceries
+  regex: '(?i)\bwaitrose\b'
+
+- canonical: Lidl
+  category: groceries
+  regex: '(?i)\blidl\b'
+
+- canonical: Aldi
+  category: groceries
+  regex: '(?i)\baldi\b'
+
+- canonical: Co-op
+  category: groceries
+  regex: '(?i)co(-|\s+)op'
+
+- canonical: M&S
+  category: groceries
+  regex: '(?i)\bM(ARKS)?\&S(PENCER)?\b'
+
+- canonical: Amazon
+  category: shopping
+  regex: '(?i)\b(amazon|amzn?)'
+
+- canonical: AliExpress
+  category: shopping
+  regex: '(?i)aliexpress'
+
+- canonical: eBay
+  category: shopping
+  regex: '(?i)\bebay\b'
+
+- canonical: IKEA
+  category: shopping
+  regex: '(?i)\bikea\b'
+
+- canonical: Etsy
+  category: shopping
+  regex: '(?i)etsy'
+
+- canonical: Trainline
+  category: transport
+  regex: '(?i)trainline'
+
+- canonical: Transport for London
+  category: transport
+  regex: '(?i)\btfl\b'
+
+- canonical: Uber Eats
+  category: eating_out
+  regex: '(?i)\buber\s*\*\s*eats?\b'
+
+- canonical: Uber
+  category: transport
+  regex: '(?i)\b(?:uber|ubr)\s*\*(?!\s*eats?\b)'
+
+- canonical: GWR
+  category: transport
+  regex: '(?i)\bGWR\b'
+
+- canonical: Costa Coffee
+  category: eating_out
+  regex: '(?i)\bcosta(\s+coffee)?\b'
+
+- canonical: Pret
+  category: eating_out
+  regex: '(?i)\bpret\b'
+
+- canonical: Starbucks
+  category: eating_out
+  regex: '(?i)\bstarbucks\b'
+
+- canonical: Greggs
+  category: eating_out
+  regex: '(?i)\bgreggs\b'
+
+- canonical: Subway
+  category: eating_out
+  regex: '(?i)\bsubway\b'
+
+- canonical: McDonald''s
+  category: eating_out
+  regex: '(?i)\bmcdonald''?s\b'
+
+- canonical: Nandos
+  category: eating_out
+  regex: '(?i)\bnandos\b'
+
+- canonical: Five Guys
+  category: eating_out
+  regex: '(?i)\bguys\b'
+
+- canonical: KFC
+  category: eating_out
+  regex: '(?i)\bkfc\b'
+
+- canonical: Wetherspoon
+  category: eating_out
+  regex: '(?i)wetherspoon'
+
+- canonical: Deliveroo
+  category: eating_out
+  regex: '(?i)\bdeliveroo\b'
+
+- canonical: Booking.com
+  category: holidays
+  regex: '(?i)\bbooking\b'
+
+- canonical: Airbnb
+  category: holidays
+  regex: '(?i)airbnb'
+
+- canonical: Ryanair
+  category: holidays
+  regex: '(?i)ryanair'
+
+- canonical: Apple
+  category: subscriptions
+  regex: '(?i)\bapple\.com\b'
+
+- canonical: Microsoft
+  category: subscriptions
+  regex: '(?i)\bmicrosoft\b'
+
+- canonical: ChatGPT
+  category: subscriptions
+  regex: '(?i)\bChatGPT\b'
+
+- canonical: Revolut
+  category: internal
+  regex: '(?i)\brevolut\b'
+
+- canonical: Boots
+  category: personal_care
+  regex: '(?i)\bboots\d*\b'
+
+- canonical: Cash Withdrawal Fee
+  category: fees
+  regex: '(?i)Cash\ Withdrawal\ Handling\ Charge'
+
+- canonical: ATM
+  category: cash
+  regex: '(?i)\b(cash\s+)?withdrawal\b'

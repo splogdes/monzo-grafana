@@ -3,6 +3,9 @@
 data/tokens.json
 data/tokens.json.*
 data/categories.yaml
+data/categories_santander.yaml
+data/santander_rules.yaml
+data/santander/
 
 # Python
 __pycache__/

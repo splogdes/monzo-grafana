@@ -23,6 +23,8 @@ from ..rules import (
     tx_description,
     tx_time,
 )
+from ..santander.staging_rules import load_rules
+from ..santander.staging_rules import resolve as resolve_santander
 from .groups import sync_groups
 from .splits import sync_splits
 
@@ -52,12 +54,12 @@ ON CONFLICT (id) DO UPDATE SET
 
 RETAG_UPDATE_SQL = """
 UPDATE transactions SET
-    category = %s, amortise_days = %s,
+    merchant = %s, category = %s, amortise_days = %s,
     my_share = %s, group_id = %s,
     offset_for_tx = %s, offset_for_group = %s
 WHERE id = %s
-  AND (category, amortise_days, my_share, group_id, offset_for_tx, offset_for_group)
-      IS DISTINCT FROM (%s, %s, %s, %s, %s, %s)
+  AND (merchant, category, amortise_days, my_share, group_id, offset_for_tx, offset_for_group)
+      IS DISTINCT FROM (%s, %s, %s, %s, %s, %s, %s)
 """
 
 
@@ -149,29 +151,35 @@ def retag(cfg: Config) -> None:
         sync_groups(cfg)
         split_parents = sync_splits(cfg)
         overrides = load_overrides(cfg.categories_file)
+        staging_rules = load_rules(cfg.santander_rules_file)
         annotations = get_split_annotations(cfg)
 
         with psycopg.connect(cfg.pg_dsn) as conn, conn.cursor() as cur:
             # Skip ledger rows (sync_splits owns those) and split parents
             # (sync_splits has already set their category to 'split').
             cur.execute(
-                "SELECT id, merchant, description, monzo_category, occurred_at "
+                "SELECT id, account_id, merchant, description, monzo_category, occurred_at "
                 "FROM transactions WHERE account_id <> 'ledger'"
             )
             updates = 0
-            for tx_id, merchant, description, monzo_cat, occurred_at in cur.fetchall():
+            for tx_id, account_id, merchant, description, monzo_cat, occurred_at in cur.fetchall():
                 if tx_id in split_parents:
                     continue
-                rule = find_override(tx_id, merchant, description or "", overrides)
-                new_category = (rule and rule.get("category")) or monzo_cat
+                if account_id == "santander" and staging_rules and description:
+                    merchant, new_category, rule = resolve_santander(
+                        tx_id, description, staging_rules, overrides, fallback_category=monzo_cat
+                    )
+                else:
+                    rule = find_override(tx_id, merchant, description or "", overrides)
+                    new_category = (rule and rule.get("category")) or monzo_cat
                 new_days = resolve_amortise_days(occurred_at, rule, annotations)
                 share, group_id, off_tx, off_grp = rule_to_columns(rule)
                 cur.execute(
                     RETAG_UPDATE_SQL,
                     (
-                        new_category, new_days, share, group_id, off_tx, off_grp,
+                        merchant, new_category, new_days, share, group_id, off_tx, off_grp,
                         tx_id,
-                        new_category, new_days, share, group_id, off_tx, off_grp,
+                        merchant, new_category, new_days, share, group_id, off_tx, off_grp,
                     ),
                 )
                 updates += cur.rowcount
