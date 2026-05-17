@@ -51,7 +51,6 @@ def render_rule_form(
 ) -> bytes:
     params = params or {}
     recent_txs = queries.fetch_recent_transactions(settings.pg_dsn)
-    recent_outgoings = [t for t in recent_txs if t["amount"] < 0]
     merchants = queries.fetch_merchants(settings.pg_dsn)
 
     if mode == "new":
@@ -84,6 +83,7 @@ def render_rule_form(
                 "category": params.get("category", ""),
             }
 
+        offset_for_tx_label = ""
         action = "/add"
         cancel_href = "javascript:window.close()" if tx_id else "/"
         auto_close = "1" if tx_id else ""
@@ -120,25 +120,24 @@ def render_rule_form(
                 break
 
         context_tx = None
-        if tx_id:
-            d = queries.fetch_transactions_by_ids(settings.pg_dsn, [tx_id]).get(tx_id)
-            if d:
-                context_tx = {
-                    "merchant": d["merchant"],
-                    "amount_label": f"£{d['amount']:.2f}",
-                    "description": d["description"],
-                    "date": d["date"],
-                    "category": d["category"],
-                }
+        lookup_ids = [i for i in {tx_id, offset_for_tx} if i]
+        details = queries.fetch_transactions_by_ids(settings.pg_dsn, lookup_ids)
+        if tx_id and (d := details.get(tx_id)):
+            context_tx = {
+                "merchant": d["merchant"],
+                "amount_label": f"£{d['amount']:.2f}",
+                "description": d["description"],
+                "date": d["date"],
+                "category": d["category"],
+            }
+        if offset_for_tx and (d := details.get(offset_for_tx)):
+            offset_for_tx_label = f"{d['date']} · {d['merchant'] or '?'} · £{abs(d['amount']):.2f}"
+        else:
+            offset_for_tx_label = ""
 
         action = "/update"
         cancel_href = "/"
         auto_close = ""
-
-    offset_for_tx_extra = ""
-    recent_outgoing_ids = {t["id"] for t in recent_outgoings}
-    if offset_for_tx and offset_for_tx not in recent_outgoing_ids:
-        offset_for_tx_extra = offset_for_tx
 
     ctx = {
         "title": "Add rule" if mode == "new" else f"Edit rule #{index}",
@@ -155,10 +154,9 @@ def render_rule_form(
         "my_share": my_share,
         "group": group,
         "offset_for_tx": offset_for_tx,
-        "offset_for_tx_extra": offset_for_tx_extra,
+        "offset_for_tx_label": offset_for_tx_label,
         "offset_for_group": offset_for_group,
         "recent_txs": recent_txs,
-        "recent_outgoings": recent_outgoings,
         "merchants": merchants,
         "tx_to_merchant_json": render.tx_to_merchant_json(recent_txs),
         "cancel_href": cancel_href,

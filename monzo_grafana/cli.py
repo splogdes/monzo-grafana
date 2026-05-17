@@ -1,12 +1,14 @@
 """Argparse-based CLI for the poller.
 
 Subcommands:
-    auth          One-time OAuth token exchange
-    poll          Single Monzo fetch + upsert, then exit
-    retag         Re-apply categories.yaml rules to existing rows
-    sync-groups   Push the YAML ``groups:`` section into the groups table
-    sync-splits   Rebuild synthetic ledger rows from the YAML ``splits:`` section
-    snapshot      Record an external-account balance snapshot
+    auth              One-time OAuth token exchange
+    poll              Single Monzo fetch + upsert, then exit
+    retag             Re-apply categories.yaml rules to existing rows
+    sync-groups       Push the YAML ``groups:`` section into the groups table
+    sync-splits       Rebuild synthetic ledger rows from the YAML ``splits:`` section
+    snapshot          Record an external-account balance snapshot
+    import-santander  Import Santander statement exports
+    import-vanguard   Import Vanguard ISA CSV export
     top-merchants     List the top merchants per account
     cluster-merchants Group Santander variants and cross-reference Monzo
     schedule          Scheduled polling loop with HTTP trigger server (default)
@@ -15,6 +17,7 @@ Subcommands:
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from .cluster_merchants import cluster_merchants
 from .config import Config
@@ -28,6 +31,7 @@ from .monzo.auth import do_auth
 from .santander.importer import import_paths as import_santander_paths
 from .scheduler import run_schedule
 from .top_merchants import top_merchants
+from .vanguard.importer import import_csv as import_vanguard_csv
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -49,6 +53,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
     imp = sub.add_parser("import-santander", help="Import Santander statement exports")
     imp.add_argument("paths", nargs="*", help="Files or directories (default: cwd)")
+
+    imp_v = sub.add_parser("import-vanguard", help="Import Vanguard ISA CSV export")
+    imp_v.add_argument("csv_path", help="Path to Vanguard ISA CSV file")
 
     top = sub.add_parser(
         "top-merchants",
@@ -99,6 +106,8 @@ def main(argv: list[str] | None = None) -> None:
         record_snapshot(cfg, args.account_id, args.observed_at, args.balance, args.contributions)
     elif command == "import-santander":
         import_santander_paths(cfg, args.paths)
+    elif command == "import-vanguard":
+        import_vanguard_csv(cfg, Path(args.csv_path))
     elif command == "top-merchants":
         top_merchants(cfg, args.limit, args.min_count)
     elif command == "cluster-merchants":

@@ -1,5 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+  .ac { position: relative; max-width: 360px; }
+  .ac-current { background: #eef2ff; padding: 0.4em 0.6em; border-radius: 4px;
+                margin-bottom: 0.3em; font-size: 0.9em; }
+  .ac-current code { background: transparent; color: #555; margin-left: 0.4em; }
+  .ac-current a { margin-left: 0.6em; color: #b91c1c; }
+  .ac-list { list-style: none; margin: 0; padding: 0; position: absolute;
+             left: 0; right: 0; top: 100%; background: white;
+             border: 1px solid #ccc; border-top: none;
+             border-radius: 0 0 4px 4px; max-height: 260px; overflow-y: auto;
+             z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+  .ac-list li { padding: 0.4em 0.6em; cursor: pointer; font-size: 0.92em; }
+  .ac-list li:hover, .ac-list li.active { background: #eef2ff; }
+  .ac-list .ac-empty { color: #888; cursor: default; font-style: italic; }
+</style>
 {% if mode == "new" %}
   <h1>Add rule</h1>
 {% else %}
@@ -72,15 +87,17 @@
   <input name="group" type="text" value="{{ group }}" placeholder="e.g. iceland_2025" list="group-options">
 
   <label>Offset for transaction{% if mode == "new" %} (this row is a refund of…){% endif %}</label>
-  <select name="offset_for_tx">
-    <option value="" {% if not offset_for_tx %}selected{% endif %}>— none —</option>
-    {% if offset_for_tx_extra %}
-      <option value="{{ offset_for_tx_extra }}" selected>{{ offset_for_tx_extra }} (older)</option>
-    {% endif %}
-    {% for t in recent_outgoings %}
-      <option value="{{ t.id }}" {% if t.id == offset_for_tx %}selected{% endif %}>{{ t.date }} · {{ t.merchant }} · £{{ '%.2f'|format(t.amount) }}</option>
-    {% endfor %}
-  </select>
+  <div class="ac" id="offset-tx-ac">
+    <div id="offset-tx-current" class="ac-current" {% if not offset_for_tx %}hidden{% endif %}>
+      Selected: <strong id="offset-tx-current-label">{{ offset_for_tx_label }}</strong>
+      <code id="offset-tx-current-id">{{ offset_for_tx }}</code>
+      <a href="#" id="offset-tx-clear">clear</a>
+    </div>
+    <input type="text" id="offset-tx-search" autocomplete="off"
+           placeholder="type to search — date, merchant, or transaction id">
+    <input type="hidden" name="offset_for_tx" id="offset-tx-id" value="{{ offset_for_tx }}">
+    <ul id="offset-tx-results" class="ac-list" hidden></ul>
+  </div>
 
   <label>Offset for group{% if mode == "new" %} (this row is a repayment toward…){% endif %}</label>
   <input name="offset_for_group" type="text" value="{{ offset_for_group }}" placeholder="e.g. iceland_2025" list="group-options">
@@ -118,6 +135,104 @@
     }
     matchBy.addEventListener('change', syncList);
     {% if mode == "new" %}syncList();{% endif %}
+  })();
+
+  (function () {
+    const search = document.getElementById('offset-tx-search');
+    const hidden = document.getElementById('offset-tx-id');
+    const list = document.getElementById('offset-tx-results');
+    const current = document.getElementById('offset-tx-current');
+    const currentLabel = document.getElementById('offset-tx-current-label');
+    const currentId = document.getElementById('offset-tx-current-id');
+    const clearLink = document.getElementById('offset-tx-clear');
+
+    let timer = null;
+    let activeIndex = -1;
+    let rows = [];
+
+    function fmt(r) {
+      const sign = r.amount < 0 ? '-£' : '£';
+      return r.date + ' · ' + (r.merchant || '?') + ' · ' + sign + Math.abs(r.amount).toFixed(2);
+    }
+
+    function render() {
+      list.innerHTML = '';
+      if (!rows.length) {
+        const li = document.createElement('li');
+        li.className = 'ac-empty';
+        li.textContent = 'no matches';
+        list.appendChild(li);
+      } else {
+        rows.forEach((r, i) => {
+          const li = document.createElement('li');
+          if (i === activeIndex) li.className = 'active';
+          li.textContent = fmt(r);
+          li.addEventListener('mousedown', (e) => { e.preventDefault(); pick(i); });
+          list.appendChild(li);
+        });
+      }
+      list.hidden = false;
+    }
+
+    function fetchRows(q) {
+      fetch('/api/offset_tx_search?q=' + encodeURIComponent(q))
+        .then(r => r.json())
+        .then(data => { rows = data; activeIndex = -1; render(); })
+        .catch(() => { rows = []; activeIndex = -1; render(); });
+    }
+
+    function schedule() {
+      clearTimeout(timer);
+      const q = search.value;
+      timer = setTimeout(() => fetchRows(q), 150);
+    }
+
+    function pick(i) {
+      const r = rows[i];
+      if (!r) return;
+      hidden.value = r.id;
+      currentLabel.textContent = fmt(r);
+      currentId.textContent = r.id;
+      current.hidden = false;
+      search.value = '';
+      list.hidden = true;
+    }
+
+    function clearSel(e) {
+      if (e) e.preventDefault();
+      hidden.value = '';
+      currentLabel.textContent = '';
+      currentId.textContent = '';
+      current.hidden = true;
+      search.value = '';
+      list.hidden = true;
+      search.focus();
+    }
+
+    search.addEventListener('input', schedule);
+    search.addEventListener('focus', () => fetchRows(search.value));
+    search.addEventListener('blur', () => setTimeout(() => { list.hidden = true; }, 120));
+    search.addEventListener('keydown', (e) => {
+      if (list.hidden || !rows.length) {
+        if (e.key === 'Enter') e.preventDefault();
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        activeIndex = Math.min(rows.length - 1, activeIndex + 1);
+        render();
+        e.preventDefault();
+      } else if (e.key === 'ArrowUp') {
+        activeIndex = Math.max(0, activeIndex - 1);
+        render();
+        e.preventDefault();
+      } else if (e.key === 'Enter' && activeIndex >= 0) {
+        pick(activeIndex);
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        list.hidden = true;
+      }
+    });
+    clearLink.addEventListener('click', clearSel);
   })();
 </script>
 {% endblock %}

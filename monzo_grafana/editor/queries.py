@@ -99,6 +99,38 @@ def fetch_recent_outgoings(dsn: str | None, limit: int = 200) -> list[dict[str, 
     return _run(dsn, q, [])
 
 
+def search_outgoings(
+    dsn: str | None, query: str, limit: int = 20
+) -> list[dict[str, Any]]:
+    """Filtered outgoings for live autocomplete.
+
+    Empty ``query`` falls back to the most-recent slice so the dropdown is
+    useful on first focus.
+    """
+    if not (query or "").strip():
+        return fetch_recent_outgoings(dsn, limit)
+
+    like = f"%{query.strip()}%"
+
+    def q(cur: psycopg.Cursor[Any]) -> list[dict[str, Any]]:
+        cur.execute(
+            "SELECT id, occurred_at::date, merchant, amount "
+            "FROM transactions "
+            "WHERE amount < 0 AND ("
+            "  id ILIKE %s OR merchant ILIKE %s "
+            "  OR description ILIKE %s OR occurred_at::text ILIKE %s"
+            ") "
+            "ORDER BY occurred_at DESC LIMIT %s",
+            (like, like, like, like, limit),
+        )
+        return [
+            {"id": r[0], "date": r[1], "merchant": r[2], "amount": float(r[3])}
+            for r in cur.fetchall()
+        ]
+
+    return _run(dsn, q, [])
+
+
 def fetch_transactions_by_ids(
     dsn: str | None, tx_ids: list[str]
 ) -> dict[str, dict[str, Any]]:

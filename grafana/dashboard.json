@@ -1,28 +1,12 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_POSTGRES",
-      "label": "PostgreSQL",
-      "description": "PostgreSQL datasource pointing at the monzo-grafana finance database",
-      "type": "datasource",
-      "pluginId": "postgres",
-      "pluginName": "PostgreSQL"
-    }
-  ],
-  "__requires": [
-    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "11.1.0" },
-    { "type": "datasource", "id": "postgres", "name": "PostgreSQL", "version": "1.0.0" },
-    { "type": "panel", "id": "stat", "name": "Stat", "version": "" },
-    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
-    { "type": "panel", "id": "barchart", "name": "Bar chart", "version": "" },
-    { "type": "panel", "id": "piechart", "name": "Pie chart", "version": "" },
-    { "type": "panel", "id": "table", "name": "Table", "version": "" }
-  ],
   "annotations": {
     "list": [
       {
         "builtIn": 1,
-        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
         "enable": true,
         "hide": false,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -35,981 +19,2469 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": null,
+  "id": 2,
   "links": [],
   "panels": [
     {
-      "id": 1,
-      "title": "Income",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "fixed", "fixedColor": "green" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(amount), 0) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount > 0\n  AND category NOT IN ('internal', 'savings');"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Spend (raw)",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "fixed", "fixedColor": "red" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND category NOT IN ('internal', 'savings');"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "title": "Spend (smoothed)",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "fixed", "fixedColor": "blue" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND category NOT IN ('internal', 'savings');"
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "title": "Net savings (income − smoothed spend)",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "orange", "value": 0 },
-              { "color": "green", "value": 1 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "WITH income AS (\n  SELECT COALESCE(SUM(amount), 0) AS v\n  FROM transactions\n  WHERE $__timeFilter(occurred_at)\n    AND amount > 0\n    AND category NOT IN ('internal', 'savings')\n), spend AS (\n  SELECT COALESCE(SUM(-amount), 0) AS v\n  FROM personal_spend_daily\n  WHERE $__timeFilter(occurred_at)\n    AND amount < 0\n    AND category NOT IN ('internal', 'savings')\n)\nSELECT (income.v - spend.v) AS value FROM income, spend;"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "Uncategorised spend",
-      "description": "Spend Monzo left in 'general' or 'unknown' — candidates for categories.yaml overrides.",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 100 },
-              { "color": "red", "value": 500 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND category IN ('general', 'unknown');"
-        }
-      ]
-    },
-    {
-      "id": 6,
-      "title": "Avg monthly spend",
-      "description": "Average raw spend per month over the selected range. Excludes internal/savings.",
-      "type": "stat",
-      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "colorMode": "value",
-        "graphMode": "area",
-        "textMode": "auto"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "fixed", "fixedColor": "purple" },
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "WITH monthly AS (\n  SELECT date_trunc('month', occurred_at) AS m, SUM(-amount) AS spend\n  FROM transactions\n  WHERE $__timeFilter(occurred_at)\n    AND amount < 0\n    AND category NOT IN ('internal', 'savings')\n  GROUP BY 1\n)\nSELECT COALESCE(AVG(spend), 0) AS value FROM monthly;"
-        }
-      ]
-    },
-    {
-      "id": 7,
-      "title": "Spend over time — raw vs smoothed",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["sum"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "spanNulls": false,
-            "drawStyle": "line",
-            "showPoints": "auto",
-            "pointSize": 5
-          }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "Raw spend" },
-            "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
-              { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [6, 3] } }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "Smoothed spend" },
-            "properties": [
-              { "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }
-            ]
-          }
-        ]
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(occurred_at, '1M') AS time,\n  'Raw spend' AS metric,\n  SUM(-amount) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND category NOT IN ('internal', 'savings')\nGROUP BY 1\nORDER BY 1;"
-        },
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "B",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(occurred_at, '1M') AS time,\n  'Smoothed spend' AS metric,\n  SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND category NOT IN ('internal', 'savings')\nGROUP BY 1\nORDER BY 1;"
-        }
-      ]
-    },
-    {
-      "id": 8,
-      "title": "Spend by category over time",
-      "description": "Stacked monthly spend per category. Excludes internal/savings.",
-      "type": "timeseries",
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 12 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "bars",
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "spanNulls": false,
-            "showPoints": "never",
-            "stacking": { "mode": "normal", "group": "A" }
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroup(occurred_at, '1M') AS time,\n  category AS metric,\n  SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND category NOT IN ('internal', 'savings')\nGROUP BY 1, 2\nORDER BY 1, 2;"
-        }
-      ]
-    },
-    {
-      "id": 9,
-      "title": "Total spend by category",
-      "type": "barchart",
-      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 22 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "orientation": "horizontal",
-        "showValue": "auto",
-        "stacking": "none",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "barRadius": 0,
-        "fullHighlight": false,
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": [] },
-        "xField": "category"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 1, "fillOpacity": 80, "axisPlacement": "auto" }
-        },
-        "overrides": []
-      },
-      "transformations": [],
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT category, SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\nGROUP BY 1\nORDER BY value DESC;"
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "title": "Top 20 merchants by spend",
-      "type": "barchart",
-      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 22 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "orientation": "horizontal",
-        "showValue": "auto",
-        "stacking": "none",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "barRadius": 0,
-        "fullHighlight": false,
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "showLegend": false, "displayMode": "list", "placement": "bottom", "calcs": [] },
-        "xField": "merchant"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 1, "fillOpacity": 80, "axisPlacement": "auto" }
-        },
-        "overrides": []
-      },
-      "transformations": [],
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT merchant, SUM(-amount) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND category NOT IN ('internal', 'savings')\nGROUP BY 1\nORDER BY value DESC\nLIMIT 20;"
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "title": "Uncategorised transactions",
-      "description": "Transactions Monzo couldn't categorise. Click a merchant to add a rule.",
-      "type": "table",
-      "gridPos": { "h": 10, "w": 16, "x": 0, "y": 32 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": { "show": false, "reducer": ["sum"], "countRows": false }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "occurred_at" },
-            "properties": [
-              { "id": "displayName", "value": "Date" },
-              { "id": "custom.width", "value": 180 }
-            ]
-          },
-          {
-            "matcher": { "id": "byName", "options": "amount" },
-            "properties": [
-              { "id": "displayName", "value": "Amount" },
-              { "id": "unit", "value": "currencyGBP" },
-              { "id": "custom.width", "value": 110 },
-              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
               {
-                "id": "thresholds",
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(amount), 0) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount > 0\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')));",
+          "refId": "A"
+        }
+      ],
+      "title": "Income",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')));",
+          "refId": "A"
+        }
+      ],
+      "title": "Spend (raw)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND (amount < 0 OR is_reimbursement)\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')));",
+          "refId": "A"
+        }
+      ],
+      "title": "Spend (smoothed)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH income AS (\n  SELECT COALESCE(SUM(amount), 0) AS v\n  FROM transactions\n  WHERE $__timeFilter(occurred_at)\n    AND amount > 0\n    AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n             ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n    AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\n), spend AS (\n  SELECT COALESCE(SUM(-amount), 0) AS v\n  FROM personal_spend_daily\n  WHERE $__timeFilter(occurred_at)\n    AND amount < 0\n    AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n             ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n    AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')))\n)\nSELECT (income.v - spend.v) AS value FROM income, spend;",
+          "refId": "A"
+        }
+      ],
+      "title": "Net savings (income \u2212 smoothed spend)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "description": "Spend Monzo left in 'general' or 'unknown' \u2014 candidates for categories.yaml overrides.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND CASE WHEN '${category:csv}' = '*' THEN category IN ('general', 'unknown')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')));",
+          "refId": "A"
+        }
+      ],
+      "title": "Uncategorised spend",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "description": "Average raw spend per month over the selected range. Excludes internal/savings.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "purple",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "purple",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH monthly AS (\n  SELECT date_trunc('month', occurred_at) AS m, SUM(-amount) AS spend\n  FROM transactions\n  WHERE $__timeFilter(occurred_at)\n    AND amount < 0\n    AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n             ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n    AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\n  GROUP BY 1\n)\nSELECT COALESCE(AVG(spend), 0) AS value FROM monthly;",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg monthly spend",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Raw spend"
+            },
+            "properties": [
+              {
+                "id": "color",
                 "value": {
-                  "mode": "absolute",
-                  "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0 }]
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    6,
+                    3
+                  ],
+                  "fill": "dash"
                 }
               }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "merchant" },
+            "matcher": {
+              "id": "byName",
+              "options": "Smoothed spend"
+            },
             "properties": [
-              { "id": "displayName", "value": "Merchant" },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroup(occurred_at, '1M') AS time,\n  'Raw spend' AS metric,\n  SUM(-amount) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\nGROUP BY 1\nORDER BY 1;",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroup(occurred_at, '1M') AS time,\n  'Smoothed spend' AS metric,\n  SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND (amount < 0 OR is_reimbursement)\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')))\nGROUP BY 1\nORDER BY 1;",
+          "refId": "B"
+        }
+      ],
+      "title": "Spend over time \u2014 raw vs smoothed",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dflmzohi4i0owf"
+      },
+      "description": "Stacked monthly spend per category. Excludes internal/savings.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  $__timeGroup(occurred_at, '1w') AS time,\n  category AS metric,\n  SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND (amount < 0 OR is_reimbursement)\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')))\nGROUP BY 1, 2\nORDER BY 1, 2;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Spend by category over time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 9,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "category",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT category, SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND (amount < 0 OR is_reimbursement)\n  AND ('${category:csv}' = '*' OR category = ANY(string_to_array('${category:csv}', ',')))\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')))\nGROUP BY 1\nORDER BY value DESC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Total spend by category",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 10,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "merchant",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT merchant, SUM(-amount) AS value\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\nGROUP BY 1\nORDER BY value DESC\nLIMIT 20;",
+          "refId": "A"
+        }
+      ],
+      "title": "Top 20 merchants by spend",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dflmzohi4i0owf"
+      },
+      "description": "Transactions Monzo couldn't categorise. Click a merchant to add a rule.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "occurred_at"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "amount"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Amount"
+              },
+              {
+                "id": "unit",
+                "value": "currencyGBP"
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "merchant"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Merchant"
+              },
               {
                 "id": "links",
                 "value": [
                   {
+                    "targetBlank": true,
                     "title": "Edit rule for this transaction",
-                    "url": "http://localhost:7924/new?tx_id=${__data.fields.transaction_id:percentencode}&merchant=${__value.text:percentencode}&description=${__data.fields.description:percentencode}&amount=${__data.fields.amount:percentencode}&category=${__data.fields.category:percentencode}",
-                    "targetBlank": true
+                    "url": "http://localhost:7924/new?tx_id=${__data.fields.transaction_id:percentencode}&merchant=${__value.text:percentencode}&description=${__data.fields.description:percentencode}&amount=${__data.fields.amount:percentencode}&category=${__data.fields.category:percentencode}"
                   }
                 ]
               }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "description" },
-            "properties": [{ "id": "displayName", "value": "Description" }]
+            "matcher": {
+              "id": "byName",
+              "options": "description"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Description"
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "transaction_id" },
+            "matcher": {
+              "id": "byName",
+              "options": "transaction_id"
+            },
             "properties": [
-              { "id": "displayName", "value": "Tx ID" },
-              { "id": "custom.width", "value": 220 }
+              {
+                "id": "displayName",
+                "value": "Tx ID"
+              },
+              {
+                "id": "custom.width",
+                "value": 220
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Description"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 595
+              }
             ]
           }
         ]
       },
-      "transformations": [],
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 0,
+        "y": 32
+      },
+      "id": 11,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Amount"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.3",
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT occurred_at, amount, merchant, description, category, id AS transaction_id\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND category IN ('general', 'unknown')\nORDER BY occurred_at DESC\nLIMIT 200;"
+          "rawSql": "SELECT occurred_at, amount, merchant, description, category, id AS transaction_id\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND CASE WHEN '${category:csv}' = '*' THEN category IN ('general', 'unknown')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\nORDER BY occurred_at DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
-      ]
+      ],
+      "title": "Uncategorised transactions",
+      "type": "table"
     },
     {
-      "id": 12,
-      "title": "Category share",
-      "description": "Donut of total spend by category over the selected range.",
-      "type": "piechart",
-      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 32 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "pieType": "donut",
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "right", "showLegend": true, "values": ["percent"] },
-        "displayLabels": ["percent"]
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
       },
+      "description": "Donut of total spend by category over the selected range.",
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" }
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "currencyGBP"
         },
         "overrides": []
       },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 32
+      },
+      "id": 12,
+      "options": {
+        "displayLabels": [
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT category, SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND (amount < 0 OR is_reimbursement)\n  AND ('${category:csv}' = '*' OR category = ANY(string_to_array('${category:csv}', ',')))\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')))\nGROUP BY 1\nORDER BY value DESC;",
+          "refId": "A"
+        }
+      ],
+      "title": "Category share",
       "transformations": [
         {
           "id": "rowsToFields",
           "options": {
             "mappings": [
-              { "fieldName": "category", "handlerKey": "field.name" },
-              { "fieldName": "value", "handlerKey": "field.value" }
+              {
+                "fieldName": "category",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "value",
+                "handlerKey": "field.value"
+              }
             ]
           }
         }
       ],
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT category, SUM(-amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND amount < 0\nGROUP BY 1\nORDER BY value DESC;"
-        }
-      ]
+      "type": "piechart"
     },
     {
-      "id": 13,
-      "title": "All transactions",
-      "description": "Filtered by the category dropdown above. Default 'All' shows everything including internal/savings.",
-      "type": "table",
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 42 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": { "show": false, "reducer": ["sum"], "countRows": false }
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dflmzohi4i0owf"
       },
+      "description": "Filtered by the category dropdown above. Default 'All' shows everything including internal/savings.",
       "fieldConfig": {
         "defaults": {
-          "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
         },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "occurred_at" },
+            "matcher": {
+              "id": "byName",
+              "options": "occurred_at"
+            },
             "properties": [
-              { "id": "displayName", "value": "Date" },
-              { "id": "custom.width", "value": 180 }
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "amount" },
+            "matcher": {
+              "id": "byName",
+              "options": "amount"
+            },
             "properties": [
-              { "id": "displayName", "value": "Amount" },
-              { "id": "unit", "value": "currencyGBP" },
-              { "id": "custom.width", "value": 110 },
-              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
+              {
+                "id": "displayName",
+                "value": "Amount"
+              },
+              {
+                "id": "unit",
+                "value": "currencyGBP"
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
               {
                 "id": "thresholds",
                 "value": {
                   "mode": "absolute",
-                  "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0 }]
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
                 }
               }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "category" },
-            "properties": [{ "id": "displayName", "value": "Category" }, { "id": "custom.width", "value": 130 }]
+            "matcher": {
+              "id": "byName",
+              "options": "category"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Category"
+              },
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "merchant" },
+            "matcher": {
+              "id": "byName",
+              "options": "merchant"
+            },
             "properties": [
-              { "id": "displayName", "value": "Merchant" },
+              {
+                "id": "displayName",
+                "value": "Merchant"
+              },
               {
                 "id": "links",
                 "value": [
                   {
+                    "targetBlank": true,
                     "title": "Edit rule for this transaction",
-                    "url": "http://localhost:7924/new?tx_id=${__data.fields.transaction_id:percentencode}&merchant=${__value.text:percentencode}&description=${__data.fields.description:percentencode}&amount=${__data.fields.amount:percentencode}&category=${__data.fields.category:percentencode}",
-                    "targetBlank": true
+                    "url": "http://localhost:7924/new?tx_id=${__data.fields.transaction_id:percentencode}&merchant=${__value.text:percentencode}&description=${__data.fields.description:percentencode}&amount=${__data.fields.amount:percentencode}&category=${__data.fields.category:percentencode}"
                   }
                 ]
               }
             ]
           },
           {
-            "matcher": { "id": "byName", "options": "description" },
-            "properties": [{ "id": "displayName", "value": "Description" }]
+            "matcher": {
+              "id": "byName",
+              "options": "description"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Description"
+              }
+            ]
           },
           {
-            "matcher": { "id": "byName", "options": "transaction_id" },
+            "matcher": {
+              "id": "byName",
+              "options": "transaction_id"
+            },
             "properties": [
-              { "id": "displayName", "value": "Tx ID" },
-              { "id": "custom.width", "value": 220 }
+              {
+                "id": "displayName",
+                "value": "Tx ID"
+              },
+              {
+                "id": "custom.width",
+                "value": 220
+              }
             ]
           }
         ]
       },
-      "transformations": [],
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Amount"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.3",
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT occurred_at, amount, category, merchant, description, id AS transaction_id\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND category = ANY(string_to_array('${category:csv}', ','))\nORDER BY occurred_at DESC\nLIMIT 1000;"
+          "rawSql": "SELECT occurred_at, amount, category, merchant, description, id AS transaction_id\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND ('${category:csv}' = '*' OR category = ANY(string_to_array('${category:csv}', ',')))\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\nORDER BY occurred_at DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
-      ]
+      ],
+      "title": "All transactions",
+      "type": "table"
     },
     {
-      "id": 14,
-      "title": "Net worth — by account",
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
       "description": "Daily balance per account. Monzo computed from transactions; others forward-filled from snapshots (`python poller.py snapshot ACC DATE BAL`).",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 54 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "none" },
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull"] }
-      },
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
             "drawStyle": "line",
-            "lineWidth": 2,
             "fillOpacity": 30,
-            "stacking": { "mode": "normal", "group": "A" },
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
             "spanNulls": true,
-            "showPoints": "never"
-          }
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
         },
         "overrides": []
       },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 54
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT day AS time, account_id AS metric, balance AS value\nFROM net_worth_daily\nWHERE $__timeFilter(day)\nORDER BY day;"
+          "rawSql": "SELECT day AS time, account_id AS metric, balance AS value\nFROM net_worth_daily\nWHERE $__timeFilter(day)\nORDER BY day;",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "Net worth \u2014 by account",
+      "type": "timeseries"
     },
     {
-      "id": 15,
-      "title": "Net worth — total",
-      "description": "Sum across all accounts. Monzo running balance + last-known snapshot per other account.",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 54 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["lastNotNull", "min", "max"] }
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
       },
+      "description": "Sum across all accounts. Monzo running balance + last-known snapshot per other account.",
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "fixed", "fixedColor": "green" },
+          "color": {
+            "fixedColor": "green",
+            "mode": "fixed"
+          },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
             "drawStyle": "line",
-            "lineWidth": 2,
             "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
             "spanNulls": true,
-            "showPoints": "never"
-          }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
         },
         "overrides": []
       },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 54
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT day AS time, 'Total' AS metric, SUM(balance) AS value\nFROM net_worth_daily\nWHERE $__timeFilter(day)\nGROUP BY day\nORDER BY day;"
+          "rawSql": "SELECT day AS time, 'Total' AS metric, SUM(balance) AS value\nFROM net_worth_daily\nWHERE $__timeFilter(day)\nGROUP BY day\nORDER BY day;",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "Net worth \u2014 total",
+      "type": "timeseries"
     },
     {
-      "id": 16,
-      "title": "Net cost per group",
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
       "description": "Gross cost (post-split), reimbursements, and net cost per holiday/lease/project.",
-      "type": "barchart",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 62 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 62
+      },
+      "id": 16,
       "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
         "orientation": "horizontal",
         "showValue": "auto",
         "stacking": "none",
-        "groupWidth": 0.7,
-        "barWidth": 0.97,
-        "tooltip": { "mode": "multi", "sort": "none" },
-        "legend": { "showLegend": true, "displayMode": "list", "placement": "bottom" },
-        "xField": "name"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" },
-          "custom": { "lineWidth": 1, "fillOpacity": 80, "axisPlacement": "auto" }
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
         },
-        "overrides": []
+        "xField": "name",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
       },
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT name, gross_cost, reimbursed, net_cost\nFROM group_costs\nWHERE COALESCE(gross_cost, 0) <> 0 OR COALESCE(reimbursed, 0) <> 0\nORDER BY starts_at DESC NULLS LAST;"
+          "rawSql": "SELECT name, gross_cost, reimbursed, net_cost\nFROM group_costs\nWHERE (COALESCE(gross_cost, 0) <> 0 OR COALESCE(reimbursed, 0) <> 0)\n  AND ('${group:csv}' = '*' OR id = ANY(string_to_array('${group:csv}', ',')))\nORDER BY starts_at DESC NULLS LAST;",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "Net cost per group",
+      "type": "barchart"
     },
     {
-      "id": 17,
-      "title": "Group detail",
-      "description": "Drill into a group: every transaction that fed it, with personal share applied. Pick a group from the dropdown.",
-      "type": "table",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 62 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": { "show": true, "reducer": ["sum"], "countRows": false, "fields": ["personal"] }
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
       },
+      "description": "Drill into a group: every transaction that fed it, with personal share applied. Pick a group from the dropdown.",
       "fieldConfig": {
         "defaults": {
-          "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
         },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "occurred_at" },
-            "properties": [{ "id": "displayName", "value": "Date" }, { "id": "custom.width", "value": 160 }] },
-          { "matcher": { "id": "byName", "options": "personal" },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "occurred_at"
+            },
             "properties": [
-              { "id": "displayName", "value": "My £" },
-              { "id": "unit", "value": "currencyGBP" },
-              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
-              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0 }] } }
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "custom.width",
+                "value": 160
+              }
             ]
           },
-          { "matcher": { "id": "byName", "options": "merchant" },
-            "properties": [{ "id": "displayName", "value": "Merchant" }] },
-          { "matcher": { "id": "byName", "options": "kind" },
-            "properties": [{ "id": "displayName", "value": "Kind" }, { "id": "custom.width", "value": 100 }] },
-          { "matcher": { "id": "byName", "options": "description" },
-            "properties": [{ "id": "displayName", "value": "Description" }] }
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "personal"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "My \u00a3"
+              },
+              {
+                "id": "unit",
+                "value": "currencyGBP"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "merchant"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Merchant"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "kind"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Kind"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "description"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Description"
+              }
+            ]
+          }
         ]
       },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 62
+      },
+      "id": 17,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": [
+            "personal"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": true
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "11.1.3",
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT t.occurred_at, t.merchant, (t.amount * t.my_share)::numeric(12,2) AS personal, t.description,\n       CASE WHEN t.offset_for_group IS NOT NULL THEN 'reimbursement' ELSE 'spend' END AS kind\nFROM transactions t\nWHERE (t.group_id = ANY(string_to_array('${group:csv}', ','))\n    OR t.offset_for_group = ANY(string_to_array('${group:csv}', ',')))\nORDER BY t.occurred_at DESC;"
+          "rawSql": "SELECT t.occurred_at, t.merchant, (t.amount * t.my_share)::numeric(12,2) AS personal, t.description,\n       CASE WHEN t.offset_for_group IS NOT NULL THEN 'reimbursement' ELSE 'spend' END AS kind\nFROM transactions t\nWHERE (t.group_id IS NOT NULL OR t.offset_for_group IS NOT NULL)\n  AND (\n    '${group:csv}' = '*'\n    OR t.group_id = ANY(string_to_array('${group:csv}', ','))\n    OR t.offset_for_group = ANY(string_to_array('${group:csv}', ','))\n  )\n  AND ('${category:csv}' = '*' OR t.category = ANY(string_to_array('${category:csv}', ',')))\nORDER BY t.occurred_at DESC;",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "Group detail",
+      "type": "table"
     },
     {
-      "id": 18,
-      "title": "Group cost timeline (amortised)",
-      "description": "Monthly spend attributed to each amortised group (e.g. rent lease) — even line across the date range, regardless of when payments actually landed.",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 70 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "desc" },
-        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["sum"] }
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
       },
+      "description": "Cumulative net cost per group within the selected time window. Each step adds a month's gross spend (post-split) and subtracts that month's reimbursements, so the right-hand edge of each line is the running total. Use the Group selector to focus on one lease/holiday/project.",
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 2,
-            "fillOpacity": 20,
-            "stacking": { "mode": "none", "group": "A" },
-            "showPoints": "never"
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "time_series",
-          "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup(occurred_at, '1M') AS time, merchant AS metric, SUM(-amount) AS value\nFROM group_personal_smoothed\nWHERE $__timeFilter(occurred_at)\nGROUP BY 1, 2\nORDER BY 1, 2;"
-        }
-      ]
-    },
-    {
-      "id": 19,
-      "title": "Savings velocity (income − personal spend)",
-      "description": "Monthly net of income minus true personal spend. Positive = saved that month.",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 12, "y": 70 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "tooltip": { "mode": "single", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["mean", "sum"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "thresholds" },
-          "custom": {
-            "drawStyle": "bars",
-            "lineWidth": 1,
-            "fillOpacity": 80,
-            "showPoints": "never"
+          "color": {
+            "mode": "palette-classic"
           },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "green", "value": 0 }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
-          }
+          },
+          "unit": "currencyGBP"
         },
         "overrides": []
       },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 70
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroup(occurred_at, '1M') AS time, 'Net' AS metric, SUM(amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\nGROUP BY 1\nORDER BY 1;"
+          "rawSql": "WITH monthly AS (\n  SELECT $__timeGroup(occurred_at, '1M') AS time,\n         COALESCE(group_id, offset_for_group) AS group_id,\n         SUM(CASE\n           WHEN group_id IS NOT NULL THEN -amount * my_share\n           ELSE -amount\n         END) AS monthly_value\n  FROM transactions\n  WHERE $__timeFilter(occurred_at)\n    AND (group_id IS NOT NULL OR offset_for_group IS NOT NULL)\n    AND ('${group:csv}' = '*'\n         OR group_id = ANY(string_to_array('${group:csv}', ','))\n         OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\n    AND ('${category:csv}' = '*' OR category = ANY(string_to_array('${category:csv}', ',')))\n  GROUP BY 1, 2\n)\nSELECT time,\n       group_id AS metric,\n       SUM(monthly_value) OVER (PARTITION BY group_id ORDER BY time) AS value\nFROM monthly\nORDER BY 1, 2;",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "Group cost — cumulative",
+      "type": "timeseries"
     },
     {
-      "id": 20,
-      "title": "Budget — this month",
-      "description": "True personal spend so far this calendar month (post-split, post-amortise). Edit panel to set your monthly target via thresholds.",
-      "type": "gauge",
-      "gridPos": { "h": 8, "w": 4, "x": 20, "y": 70 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "description": "Monthly net of income minus true personal spend. Positive = saved that month.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 12,
+        "y": 70
+      },
+      "id": 19,
       "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "legend": {
+          "calcs": [
+            "mean",
+            "sum"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroup(occurred_at, '1M') AS time, 'Net' AS metric, SUM(amount) AS value\nFROM personal_spend_daily\nWHERE $__timeFilter(occurred_at)\n  AND ('${category:csv}' = '*' OR category = ANY(string_to_array('${category:csv}', ',')))\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')))\nGROUP BY 1\nORDER BY 1;",
+          "refId": "A"
+        }
+      ],
+      "title": "Savings velocity (income \u2212 personal spend)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
+      },
+      "description": "True personal spend so far this calendar month (post-split, post-amortise). Edit panel to set your monthly target via thresholds.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "max": 4000,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 2000
+              },
+              {
+                "color": "red",
+                "value": 3000
+              }
+            ]
+          },
+          "unit": "currencyGBP"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 4,
+        "x": 20,
+        "y": 70
+      },
+      "id": 20,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
         "showThresholdLabels": false,
         "showThresholdMarkers": true,
-        "orientation": "auto"
+        "sizing": "auto"
       },
+      "pluginVersion": "11.1.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM personal_spend_daily\nWHERE date_trunc('month', occurred_at) = date_trunc('month', NOW())\n  AND (amount < 0 OR is_reimbursement)\n  AND ('${category:csv}' = '*' OR category = ANY(string_to_array('${category:csv}', ',')))\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')));",
+          "refId": "A"
+        }
+      ],
+      "title": "Budget \u2014 this month",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dflmzohi4i0owf"
+      },
+      "description": "Incoming Monzo transfers not categorised as income/internal/savings and not linked to any offset. Click merchant \u2192 set offset_for_group or category=internal. When this is empty, you're reconciled.",
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyGBP",
-          "min": 0,
-          "max": 2000,
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "orange", "value": 1200 },
-              { "color": "red", "value": 1800 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           }
         },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
-          "format": "table",
-          "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(-amount), 0) AS value\nFROM personal_spend_daily\nWHERE date_trunc('month', occurred_at) = date_trunc('month', NOW())\n  AND amount < 0;"
-        }
-      ]
-    },
-    {
-      "id": 21,
-      "title": "Reconciliation queue",
-      "description": "Incoming Monzo transfers not categorised as income/internal/savings and not linked to any offset. Click merchant → set offset_for_group or category=internal. When this is empty, you're reconciled.",
-      "type": "table",
-      "gridPos": { "h": 10, "w": 16, "x": 0, "y": 78 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm",
-        "footer": { "show": false }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
-        },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "occurred_at" },
-            "properties": [{ "id": "displayName", "value": "Date" }, { "id": "custom.width", "value": 180 }] },
-          { "matcher": { "id": "byName", "options": "amount" },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "occurred_at"
+            },
             "properties": [
-              { "id": "displayName", "value": "Amount" },
-              { "id": "unit", "value": "currencyGBP" },
-              { "id": "custom.width", "value": 110 },
-              { "id": "custom.cellOptions", "value": { "type": "color-text" } },
-              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] } }
+              {
+                "id": "displayName",
+                "value": "Date"
+              },
+              {
+                "id": "custom.width",
+                "value": 180
+              }
             ]
           },
-          { "matcher": { "id": "byName", "options": "merchant" },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "amount"
+            },
             "properties": [
-              { "id": "displayName", "value": "Merchant" },
+              {
+                "id": "displayName",
+                "value": "Amount"
+              },
+              {
+                "id": "unit",
+                "value": "currencyGBP"
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "blue",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "merchant"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Merchant"
+              },
               {
                 "id": "links",
                 "value": [
                   {
+                    "targetBlank": true,
                     "title": "Tag this incoming",
-                    "url": "http://localhost:7924/new?tx_id=${__data.fields.transaction_id:percentencode}&merchant=${__value.text:percentencode}&description=${__data.fields.description:percentencode}&amount=${__data.fields.amount:percentencode}&category=${__data.fields.category:percentencode}",
-                    "targetBlank": true
+                    "url": "http://localhost:7924/new?tx_id=${__data.fields.transaction_id:percentencode}&merchant=${__value.text:percentencode}&description=${__data.fields.description:percentencode}&amount=${__data.fields.amount:percentencode}&category=${__data.fields.category:percentencode}"
                   }
                 ]
               }
             ]
           },
-          { "matcher": { "id": "byName", "options": "description" },
-            "properties": [{ "id": "displayName", "value": "Description" }] },
-          { "matcher": { "id": "byName", "options": "category" },
-            "properties": [{ "id": "displayName", "value": "Category" }, { "id": "custom.width", "value": 130 }] },
-          { "matcher": { "id": "byName", "options": "transaction_id" },
-            "properties": [{ "id": "displayName", "value": "Tx ID" }, { "id": "custom.width", "value": 220 }] }
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "description"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Description"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "category"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Category"
+              },
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "transaction_id"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Tx ID"
+              },
+              {
+                "id": "custom.width",
+                "value": 220
+              }
+            ]
+          }
         ]
       },
+      "gridPos": {
+        "h": 10,
+        "w": 16,
+        "x": 0,
+        "y": 78
+      },
+      "id": 21,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Amount"
+          }
+        ]
+      },
+      "pluginVersion": "11.1.3",
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
+          "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT occurred_at, amount, merchant, description, category, id AS transaction_id\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount > 0\n  AND category NOT IN ('income', 'internal', 'savings')\n  AND offset_for_tx IS NULL\n  AND offset_for_group IS NULL\nORDER BY occurred_at DESC\nLIMIT 100;"
+          "rawSql": "SELECT occurred_at, amount, merchant, description, category, id AS transaction_id\nFROM transactions\nWHERE $__timeFilter(occurred_at)\n  AND amount > 0\n  AND CASE WHEN '${category:csv}' = '*' THEN category NOT IN ('income', 'internal', 'savings')\n           ELSE category = ANY(string_to_array('${category:csv}', ',')) END\n  AND ('${group:csv}' = '*' OR group_id = ANY(string_to_array('${group:csv}', ',')) OR offset_for_group = ANY(string_to_array('${group:csv}', ',')))\n  AND offset_for_tx IS NULL\n  AND offset_for_group IS NULL\nORDER BY occurred_at DESC;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
-      ]
+      ],
+      "title": "Reconciliation queue",
+      "type": "table"
     },
     {
-      "id": 22,
-      "title": "ISA growth vs contributions",
-      "description": "Vanguard ISA value (line) vs total deposited (line). Gap = market gain. Snapshot via `python poller.py snapshot vanguard_isa YYYY-MM-DD BAL CONTRIB`.",
-      "type": "timeseries",
-      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 78 },
-      "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-      "options": {
-        "tooltip": { "mode": "multi", "sort": "none" },
-        "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["lastNotNull"] }
+      "datasource": {
+        "type": "postgres",
+        "uid": "dflmzohi4i0owf"
       },
+      "description": "Vanguard ISA value (line) vs total deposited (line). Gap = market gain. Snapshot via `python poller.py snapshot vanguard_isa YYYY-MM-DD BAL CONTRIB`.",
       "fieldConfig": {
         "defaults": {
-          "unit": "currencyGBP",
-          "color": { "mode": "palette-classic" },
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
             "drawStyle": "line",
-            "lineWidth": 2,
             "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
             "spanNulls": true,
-            "showPoints": "always"
-          }
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "currencyGBP"
         },
         "overrides": []
       },
+      "gridPos": {
+        "h": 10,
+        "w": 8,
+        "x": 16,
+        "y": 78
+      },
+      "id": 22,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
       "targets": [
         {
-          "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
-          "refId": "A",
+          "datasource": {
+            "type": "postgres",
+            "uid": "dflmzohi4i0owf"
+          },
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT observed_at::timestamptz AS time,\n       balance               AS \"Value\",\n       contributions_to_date AS \"Deposited\"\nFROM account_balances\nWHERE account_id = 'vanguard_isa'\n  AND $__timeFilter(observed_at::timestamptz)\nORDER BY observed_at;"
+          "rawSql": "SELECT observed_at::timestamptz AS time,\n       balance               AS \"Value\",\n       contributions_to_date AS \"Deposited\"\nFROM account_balances\nWHERE account_id = 'vanguard_isa'\n  AND $__timeFilter(observed_at::timestamptz)\nORDER BY observed_at;",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "ISA growth vs contributions",
+      "type": "timeseries"
     }
   ],
-  "refresh": "1h",
   "schemaVersion": 39,
-  "tags": ["finance", "monzo"],
+  "tags": [
+    "finance",
+    "monzo"
+  ],
   "templating": {
     "list": [
       {
-        "name": "category",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "dflmzohi4i0owf"
+        },
+        "allValue": "*",
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
         "label": "Category",
-        "type": "query",
-        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "multi": true,
+        "name": "category",
+        "options": [],
         "query": "SELECT DISTINCT category FROM transactions ORDER BY category;",
         "refresh": 1,
-        "includeAll": true,
-        "multi": true,
-        "current": { "selected": true, "text": "All", "value": "$__all" },
-        "options": [],
         "regex": "",
+        "skipUrlSync": false,
         "sort": 1,
+        "type": "query",
         "useTags": false
       },
       {
-        "name": "group",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "postgres",
+          "uid": "dflmzohi4i0owf"
+        },
+        "allValue": "*",
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
         "label": "Group",
-        "type": "query",
-        "datasource": { "type": "postgres", "uid": "${DS_POSTGRES}" },
+        "multi": true,
+        "name": "group",
+        "options": [],
         "query": "SELECT id FROM groups ORDER BY id;",
         "refresh": 1,
-        "includeAll": true,
-        "multi": true,
-        "current": { "selected": true, "text": "All", "value": "$__all" },
-        "options": [],
         "regex": "",
+        "skipUrlSync": false,
         "sort": 1,
+        "type": "query",
         "useTags": false
       }
     ]
   },
-  "time": { "from": "now-1y", "to": "now" },
+  "time": {
+    "from": "2017-11-17T02:43:44.555Z",
+    "to": "2033-11-13T02:43:44.587Z"
+  },
   "timepicker": {},
   "timezone": "browser",
   "title": "Monzo Personal Finance",
   "uid": "monzo-finance-pg",
-  "version": 1,
+  "version": 3,
   "weekStart": "monday"
 }

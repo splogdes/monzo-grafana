@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_offset_gr ON transactions (offset_fo
 CREATE TABLE IF NOT EXISTS accounts (
     id        TEXT PRIMARY KEY,
     name      TEXT NOT NULL,
-    kind      TEXT NOT NULL,           -- 'current' | 'investment' | 'savings'
+    kind      TEXT NOT NULL,           -- 'current' | 'investment' | 'savings' | 'synthetic'
     currency  TEXT NOT NULL DEFAULT 'GBP'
 );
 
@@ -48,6 +48,7 @@ INSERT INTO accounts (id, name, kind) VALUES
     ('santander',        'Santander',        'current'),
     ('vanguard_isa',     'Vanguard ISA',     'investment'),
     ('revolut_savings',  'Revolut Savings',  'savings'),
+    ('monzo_savings',    'Monzo Savings Pot','savings'),
     ('ledger',           'Ledger (splits)',  'synthetic')
 ON CONFLICT (id) DO NOTHING;
 
@@ -105,14 +106,37 @@ WITH offsets_per_tx AS (
     WHERE offset_for_tx IS NOT NULL
     GROUP BY offset_for_tx
 )
+-- Regular rows: spend + income, post-split, per-tx offsets folded in.
+-- New column `is_reimbursement` is appended last so this view can be
+-- re-CREATE-OR-REPLACED over an older version (Postgres only allows
+-- appending columns, not inserting).
 SELECT
     t.id, t.occurred_at, t.merchant, t.description, t.category,
     t.account_id, t.amortise_days, t.group_id, t.my_share,
-    (t.amount * t.my_share) + COALESCE(o.offset_total, 0) AS net_amount
+    (t.amount * t.my_share) + COALESCE(o.offset_total, 0) AS net_amount,
+    FALSE AS is_reimbursement
 FROM transactions t
 LEFT JOIN offsets_per_tx o ON o.target_id = t.id
 WHERE t.offset_for_tx     IS NULL
   AND t.offset_for_group  IS NULL
+  AND t.category NOT IN ('internal', 'savings', 'split')
+
+UNION ALL
+
+-- Group-level reimbursements: surfaced under the TARGET group so group
+-- filters see them. Amount is positive (money coming back); downstream
+-- smoothed view drops these when the target group is amortised, since
+-- group_personal_smoothed already nets them into the lease line.
+SELECT
+    t.id, t.occurred_at, t.merchant, t.description, t.category,
+    t.account_id, t.amortise_days,
+    t.offset_for_group AS group_id,
+    t.my_share,
+    t.amount * t.my_share AS net_amount,
+    TRUE AS is_reimbursement
+FROM transactions t
+WHERE t.offset_for_group IS NOT NULL
+  AND t.offset_for_tx    IS NULL
   AND t.category NOT IN ('internal', 'savings', 'split');
 
 -- ---------------------------------------------------------------------------
@@ -156,7 +180,8 @@ SELECT
     CASE WHEN p.amortise_days IS NULL OR p.amortise_days <= 1
          THEN p.net_amount
          ELSE p.net_amount / p.amortise_days
-    END AS amount
+    END AS amount,
+    p.is_reimbursement
 FROM transactions_personal p
 LEFT JOIN groups gr ON gr.id = p.group_id
 CROSS JOIN LATERAL
@@ -195,13 +220,53 @@ WHERE gr.amortise = TRUE
 CREATE OR REPLACE VIEW personal_spend_daily AS
 SELECT transaction_id AS source_id, 'transaction'::TEXT AS source_kind,
        merchant, category, description, account_id, group_id,
-       occurred_at, amount
+       occurred_at, amount, is_reimbursement
 FROM transactions_personal_smoothed
 UNION ALL
 SELECT group_id AS source_id, 'group'::TEXT AS source_kind,
        merchant, category, description, account_id, group_id,
-       occurred_at, amount
+       occurred_at, amount, FALSE AS is_reimbursement
 FROM group_personal_smoothed;
+
+-- ---------------------------------------------------------------------------
+-- Monzo savings pot: running balance from category='savings' transactions,
+-- with simple daily interest accrual at 2.75% APR, floored at 0.
+-- Pot deposits arrive as negative Monzo amounts; we negate to get positive delta.
+-- The floor handles the "interest overshoot" when a full withdrawal (including
+-- Monzo-paid interest) makes the cumulative sum slightly negative.
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW monzo_savings_daily AS
+WITH days AS (
+    SELECT generate_series(
+        COALESCE((SELECT MIN(occurred_at)::date FROM transactions
+                  WHERE account_id = 'monzo' AND category = 'savings'), CURRENT_DATE),
+        CURRENT_DATE, '1 day'::interval
+    )::date AS day
+),
+pot_delta AS (
+    SELECT occurred_at::date AS day, SUM(-amount) AS delta
+    FROM transactions
+    WHERE account_id = 'monzo' AND category = 'savings'
+    GROUP BY 1
+),
+raw_principal AS (
+    SELECT d.day,
+           COALESCE(SUM(p.delta) OVER (ORDER BY d.day), 0) AS principal
+    FROM days d LEFT JOIN pot_delta p USING (day)
+),
+with_interest AS (
+    SELECT day, principal,
+           COALESCE(
+               SUM(GREATEST(principal, 0) * 0.0275 / 365.0)
+               OVER (ORDER BY day ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),
+               0
+           ) AS accrued_interest
+    FROM raw_principal
+)
+SELECT day,
+       GREATEST(principal + accrued_interest, 0) AS balance
+FROM with_interest;
 
 -- ---------------------------------------------------------------------------
 -- Daily net worth: Monzo running balance + last-known snapshot per other account
@@ -240,8 +305,10 @@ external_balance AS (
           ORDER BY b.observed_at DESC LIMIT 1) AS balance
     FROM days d
     CROSS JOIN accounts a
-    WHERE a.id NOT IN ('monzo', 'ledger')
+    WHERE a.id NOT IN ('monzo', 'ledger', 'monzo_savings')
 )
 SELECT day, 'monzo' AS account_id, balance FROM monzo_balance
 UNION ALL
-SELECT day, account_id, COALESCE(balance, 0) FROM external_balance;
+SELECT day, account_id, COALESCE(balance, 0) FROM external_balance
+UNION ALL
+SELECT day, 'monzo_savings' AS account_id, balance FROM monzo_savings_daily;

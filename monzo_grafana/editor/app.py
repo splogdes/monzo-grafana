@@ -7,6 +7,7 @@ monkey-patch in the original ``rule_editor.py``.
 
 from __future__ import annotations
 
+import json
 import logging
 import urllib.parse
 from collections.abc import Callable
@@ -16,7 +17,7 @@ from typing import Any
 from jinja2 import Environment
 
 from ..logging_setup import configure_logging
-from . import handlers
+from . import handlers, queries
 from .forms import build_group_from_form, build_rule_from_form, parse_split_parts
 from .render import build_environment
 from .settings import EditorSettings
@@ -46,6 +47,11 @@ class _Editor:
     @staticmethod
     def _html(status: int, body: bytes) -> Response:
         return status, body, {"Content-Type": "text/html; charset=utf-8"}
+
+    @staticmethod
+    def _json(status: int, payload: Any) -> Response:
+        body = json.dumps(payload, default=str).encode("utf-8")
+        return status, body, {"Content-Type": "application/json; charset=utf-8"}
 
     @staticmethod
     def _redirect(location: str) -> Response:
@@ -87,6 +93,19 @@ class _Editor:
         return self._html(200, handlers.render_splits_index(
             self.env, self.settings, self.store, message=params.get("msg", ""),
         ))
+
+    def get_api_offset_tx_search(self, params: dict[str, str], _form: dict[str, str], _raw: dict[str, list[str]]) -> Response:
+        try:
+            limit = int(params.get("limit", "20"))
+        except ValueError:
+            limit = 20
+        limit = max(1, min(50, limit))
+        rows = queries.search_outgoings(self.settings.pg_dsn, params.get("q", ""), limit)
+        return self._json(200, [
+            {"id": r["id"], "date": str(r["date"]),
+             "merchant": r["merchant"], "amount": r["amount"]}
+            for r in rows
+        ])
 
     def get_split(self, params: dict[str, str], _form: dict[str, str], _raw: dict[str, list[str]]) -> Response:
         tx_id = params.get("tx_id", "").strip()
@@ -228,6 +247,7 @@ def _build_routes(editor: _Editor) -> tuple[dict[str, Route], dict[str, Route]]:
         "/groups": editor.get_groups,
         "/splits": editor.get_splits,
         "/split": editor.get_split,
+        "/api/offset_tx_search": editor.get_api_offset_tx_search,
     }
     posts: dict[str, Route] = {
         "/add": editor.post_add,
