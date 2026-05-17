@@ -28,6 +28,7 @@ from .db.transactions import poll, retag
 from .dry_run_rules import dry_run
 from .logging_setup import configure_logging
 from .monzo.auth import do_auth
+from .revolut.importer import import_paths as import_revolut_paths
 from .santander.importer import import_paths as import_santander_paths
 from .scheduler import run_schedule
 from .top_merchants import top_merchants
@@ -56,6 +57,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
     imp_v = sub.add_parser("import-vanguard", help="Import Vanguard ISA CSV export")
     imp_v.add_argument("csv_path", help="Path to Vanguard ISA CSV file")
+
+    imp_r = sub.add_parser("import-revolut", help="Import Revolut CSV export")
+    imp_r.add_argument("paths", nargs="*", help="Files or directories (default: cwd)")
 
     top = sub.add_parser(
         "top-merchants",
@@ -108,6 +112,8 @@ def main(argv: list[str] | None = None) -> None:
         import_santander_paths(cfg, args.paths)
     elif command == "import-vanguard":
         import_vanguard_csv(cfg, Path(args.csv_path))
+    elif command == "import-revolut":
+        import_revolut_paths(cfg, args.paths)
     elif command == "top-merchants":
         top_merchants(cfg, args.limit, args.min_count)
     elif command == "cluster-merchants":

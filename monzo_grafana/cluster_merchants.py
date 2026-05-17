@@ -303,8 +303,8 @@ def _render(
 
         out.append(f"## Cluster {i} — {cluster.rows} rows, £{cluster.abs_spend:.2f} spend{amb}")
         out.append("Santander variants:")
-        for m in sorted(cluster.members, key=lambda x: x.rows, reverse=True):
-            out.append(f"  - {m.name:<45} ({m.rows} rows, £{abs(m.spend):.2f})")
+        for member in sorted(cluster.members, key=lambda x: x.rows, reverse=True):
+            out.append(f"  - {member.name:<45} ({member.rows} rows, £{abs(member.spend):.2f})")
         out.append("Candidate Monzo names:")
         if candidates:
             for m, n, cat in candidates:

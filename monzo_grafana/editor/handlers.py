@@ -75,12 +75,20 @@ def render_rule_form(
 
         context_tx: dict[str, Any] | None = None
         if tx_id or merchant:
+            db_tx: dict[str, Any] | None = None
+            if tx_id:
+                db_tx = queries.fetch_transactions_by_ids(settings.pg_dsn, [tx_id]).get(tx_id)
+                if db_tx and not group:
+                    group = db_tx.get("group_id") or ""
             context_tx = {
-                "merchant": merchant,
-                "amount_label": amount,
-                "description": description,
-                "date": None,
-                "category": params.get("category", ""),
+                "merchant": db_tx["merchant"] if db_tx else merchant,
+                "amount_label": f"£{db_tx['amount']:.2f}" if db_tx else amount,
+                "description": db_tx["description"] if db_tx else description,
+                "date": db_tx["date"] if db_tx else None,
+                "category": db_tx["category"] if db_tx else params.get("category", ""),
+                "group_id": db_tx.get("group_id") if db_tx else None,
+                "offset_for_tx": db_tx.get("offset_for_tx") if db_tx else None,
+                "offset_for_group": db_tx.get("offset_for_group") if db_tx else None,
             }
 
         offset_for_tx_label = ""
@@ -129,6 +137,9 @@ def render_rule_form(
                 "description": d["description"],
                 "date": d["date"],
                 "category": d["category"],
+                "group_id": d.get("group_id"),
+                "offset_for_tx": d.get("offset_for_tx"),
+                "offset_for_group": d.get("offset_for_group"),
             }
         if offset_for_tx and (d := details.get(offset_for_tx)):
             offset_for_tx_label = f"{d['date']} · {d['merchant'] or '?'} · £{abs(d['amount']):.2f}"

@@ -47,6 +47,7 @@ class Config:
     lookback_days: int
     categories_file: Path
     santander_rules_file: Path
+    revolut_rules_file: Path
     trigger_bind: str
     trigger_port: int
 
@@ -73,6 +74,9 @@ class Config:
             categories_file=Path(os.environ.get("CATEGORIES_FILE", "categories.yaml")),
             santander_rules_file=Path(
                 os.environ.get("SANTANDER_RULES_FILE", "data/santander_rules.yaml")
+            ),
+            revolut_rules_file=Path(
+                os.environ.get("REVOLUT_RULES_FILE", "data/revolut_rules.yaml")
             ),
             trigger_bind=os.environ.get("POLLER_TRIGGER_BIND", "127.0.0.1"),
             trigger_port=int(os.environ.get("POLLER_TRIGGER_PORT", "7925")),

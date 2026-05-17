@@ -5,8 +5,10 @@ data/tokens.json.*
 data/categories.yaml
 data/categories_santander.yaml
 data/santander_rules.yaml
+data/revolut_rules.yaml
 data/santander/
 data/vanguard/
+data/revolut/
 
 # Python
 __pycache__/

@@ -14,6 +14,8 @@ from ..config import Config
 from ..grafana_api import get_split_annotations
 from ..monzo.auth import get_valid_token
 from ..monzo.client import MonzoClient
+from ..revolut.staging_rules import load_rules as load_revolut_rules
+from ..revolut.staging_rules import resolve as resolve_revolut
 from ..rules import (
     find_override,
     load_overrides,
@@ -152,6 +154,7 @@ def retag(cfg: Config) -> None:
         split_parents = sync_splits(cfg)
         overrides = load_overrides(cfg.categories_file)
         staging_rules = load_rules(cfg.santander_rules_file)
+        revolut_staging_rules = load_revolut_rules(cfg.revolut_rules_file)
         annotations = get_split_annotations(cfg)
 
         with psycopg.connect(cfg.pg_dsn) as conn, conn.cursor() as cur:
@@ -168,6 +171,10 @@ def retag(cfg: Config) -> None:
                 if account_id == "santander" and staging_rules and description:
                     merchant, new_category, rule = resolve_santander(
                         tx_id, description, staging_rules, overrides, fallback_category=monzo_cat
+                    )
+                elif account_id == "revolut" and revolut_staging_rules and description:
+                    merchant, new_category, rule = resolve_revolut(
+                        tx_id, description, revolut_staging_rules, overrides, fallback_category=monzo_cat
                     )
                 else:
                     rule = find_override(tx_id, merchant, description or "", overrides)

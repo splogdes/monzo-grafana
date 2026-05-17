@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 INSERT INTO accounts (id, name, kind) VALUES
     ('monzo',            'Monzo',            'current'),
     ('santander',        'Santander',        'current'),
+    ('revolut',          'Revolut',          'current'),
     ('vanguard_isa',     'Vanguard ISA',     'investment'),
     ('revolut_savings',  'Revolut Savings',  'savings'),
     ('monzo_savings',    'Monzo Savings Pot','savings'),
@@ -119,7 +120,7 @@ FROM transactions t
 LEFT JOIN offsets_per_tx o ON o.target_id = t.id
 WHERE t.offset_for_tx     IS NULL
   AND t.offset_for_group  IS NULL
-  AND t.category NOT IN ('internal', 'savings', 'split')
+  AND t.category NOT IN ('internal', 'savings', 'investment', 'split')
 
 UNION ALL
 
@@ -137,7 +138,7 @@ SELECT
 FROM transactions t
 WHERE t.offset_for_group IS NOT NULL
   AND t.offset_for_tx    IS NULL
-  AND t.category NOT IN ('internal', 'savings', 'split');
+  AND t.category NOT IN ('internal', 'savings', 'investment', 'split');
 
 -- ---------------------------------------------------------------------------
 -- Group cost rollup: gross_cost (post-split) − reimbursed = net_cost.
@@ -269,6 +270,45 @@ SELECT day,
 FROM with_interest;
 
 -- ---------------------------------------------------------------------------
+-- Revolut GBP Boosted savings pot: running balance from category='savings'
+-- transfers in the Revolut current account, with 4.5% AER simple daily interest.
+-- "To GBP Boosted" rows have negative amount (money leaving current account),
+-- so SUM(-amount) gives positive savings deltas — same pattern as monzo_savings_daily.
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW revolut_savings_daily AS
+WITH days AS (
+    SELECT generate_series(
+        COALESCE((SELECT MIN(occurred_at)::date FROM transactions
+                  WHERE account_id = 'revolut' AND category = 'savings'), CURRENT_DATE),
+        CURRENT_DATE, '1 day'::interval
+    )::date AS day
+),
+pot_delta AS (
+    SELECT occurred_at::date AS day, SUM(-amount) AS delta
+    FROM transactions
+    WHERE account_id = 'revolut' AND category = 'savings'
+    GROUP BY 1
+),
+raw_principal AS (
+    SELECT d.day,
+           COALESCE(SUM(p.delta) OVER (ORDER BY d.day), 0) AS principal
+    FROM days d LEFT JOIN pot_delta p USING (day)
+),
+with_interest AS (
+    SELECT day, principal,
+           COALESCE(
+               SUM(GREATEST(principal, 0) * 0.045 / 365.0)
+               OVER (ORDER BY day ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING),
+               0
+           ) AS accrued_interest
+    FROM raw_principal
+)
+SELECT day,
+       GREATEST(principal + accrued_interest, 0) AS balance
+FROM with_interest;
+
+-- ---------------------------------------------------------------------------
 -- Daily net worth: Monzo running balance + last-known snapshot per other account
 -- ---------------------------------------------------------------------------
 
@@ -305,10 +345,12 @@ external_balance AS (
           ORDER BY b.observed_at DESC LIMIT 1) AS balance
     FROM days d
     CROSS JOIN accounts a
-    WHERE a.id NOT IN ('monzo', 'ledger', 'monzo_savings')
+    WHERE a.id NOT IN ('monzo', 'ledger', 'monzo_savings', 'revolut_savings')
 )
 SELECT day, 'monzo' AS account_id, balance FROM monzo_balance
 UNION ALL
 SELECT day, account_id, COALESCE(balance, 0) FROM external_balance
 UNION ALL
-SELECT day, 'monzo_savings' AS account_id, balance FROM monzo_savings_daily;
+SELECT day, 'monzo_savings' AS account_id, balance FROM monzo_savings_daily
+UNION ALL
+SELECT day, 'revolut_savings' AS account_id, balance FROM revolut_savings_daily;

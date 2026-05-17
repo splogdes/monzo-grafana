@@ -31,6 +31,27 @@
     {% if context_tx.category %}cat <code>{{ context_tx.category }}</code> · {% endif %}
     tx <code>{{ tx_id }}</code>
   </small>
+  {% if context_tx.group_id %}
+  <div style="margin-top:5px">
+    <span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:4px;font-size:0.82em;display:inline-block">
+      &#9873; already in group <strong>{{ context_tx.group_id }}</strong>
+    </span>
+  </div>
+  {% endif %}
+  {% if context_tx.offset_for_tx %}
+  <div style="margin-top:5px">
+    <span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:4px;font-size:0.82em;display:inline-block">
+      &#8629; offsets tx <strong>{{ context_tx.offset_for_tx }}</strong>
+    </span>
+  </div>
+  {% endif %}
+  {% if context_tx.offset_for_group %}
+  <div style="margin-top:5px">
+    <span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:4px;font-size:0.82em;display:inline-block">
+      &#8629; offsets group <strong>{{ context_tx.offset_for_group }}</strong>
+    </span>
+  </div>
+  {% endif %}
   {% if mode == "new" and tx_id %}
   <p style="margin:0.6em 0 0 0; font-size:0.92em">
     Bulk transfer mixing multiple intents?
@@ -94,7 +115,7 @@
       <a href="#" id="offset-tx-clear">clear</a>
     </div>
     <input type="text" id="offset-tx-search" autocomplete="off"
-           placeholder="type to search — date, merchant, or transaction id">
+           placeholder="search by any combination — merchant, date, amount (e.g. tesco 2025-01 42.50)">
     <input type="hidden" name="offset_for_tx" id="offset-tx-id" value="{{ offset_for_tx }}">
     <ul id="offset-tx-results" class="ac-list" hidden></ul>
   </div>

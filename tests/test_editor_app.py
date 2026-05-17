@@ -100,3 +100,19 @@ def test_offset_tx_search_empty_q_passes_through(
 def test_search_outgoings_with_no_dsn_returns_empty() -> None:
     assert queries.search_outgoings(None, "anything") == []
     assert queries.search_outgoings(None, "") == []
+    assert queries.search_outgoings(None, "tesco 42.50") == []
+    assert queries.search_outgoings(None, "£15.00 2025-01") == []
+
+
+def test_offset_tx_search_passes_multi_token_query(
+    monkeypatch: pytest.MonkeyPatch, editor: app_module._Editor
+) -> None:
+    captured: dict[str, str] = {}
+
+    def fake_search(_dsn: str | None, q: str, _limit: int) -> list[dict[str, Any]]:
+        captured["q"] = q
+        return []
+
+    monkeypatch.setattr(queries, "search_outgoings", fake_search)
+    editor.get_api_offset_tx_search({"q": "tesco 42.50"}, {}, {})
+    assert captured["q"] == "tesco 42.50"

@@ -1,0 +1,85 @@
+# Revolut merchant rules — copy to data/revolut_rules.yaml and edit.
+#
+# Each rule is a YAML mapping with three keys:
+#   canonical: <Title Case merchant name>
+#   category:  <one of the categories in your dashboard taxonomy>
+#   regex:     <Python regex tested against the raw Revolut description>
+#
+# List order is significant — first match wins. Put specific rules first,
+# generic catch-alls last.
+#
+# Unlike Santander, Revolut descriptions are already clean merchant names
+# (e.g. "Tesco", "Transport for London"), so no boilerplate stripping is
+# applied before matching. Use (?i) for case-insensitive matching.
+#
+# Categories used elsewhere in the project:
+#   groceries, eating_out, transport, shopping, entertainment, holidays,
+#   bills, subscriptions, personal_care, sports, education, cash, fees,
+#   income, internal, savings, transfer, unknown
+
+# --- Savings (required if you use a Revolut savings vault) ---
+- canonical: "Revolut Savings"
+  category: savings
+  regex: "(?i)GBP Boosted"
+
+# --- Self-transfers ---
+- canonical: "Your Name"
+  category: internal
+  regex: "(?i)\\byour\\s+name\\b"
+
+# --- Bank top-ups from own cards (not income — money moving between accounts) ---
+- canonical: "Bank Top-Up"
+  category: internal
+  regex: "(?i)(apple\\s+pay\\s+deposit|open\\s+banking\\s+deposit)"
+
+# --- People (transfers to/from friends/family) ---
+- canonical: "Alice Smith"
+  category: transfer
+  regex: "(?i)\\balice\\s+smith\\b"
+
+# --- Transport ---
+- canonical: "Transport for London"
+  category: transport
+  regex: "(?i)\\btransport\\s+for\\s+london\\b"
+
+- canonical: "Trainline"
+  category: transport
+  regex: "(?i)\\btrainline\\b"
+
+# --- Eating out ---
+- canonical: "Starbucks"
+  category: eating_out
+  regex: "(?i)\\bstarbucks\\b"
+
+- canonical: "McDonald's"
+  category: eating_out
+  regex: "(?i)\\bmcdonald.?s\\b"
+
+# --- Groceries ---
+- canonical: "Tesco"
+  category: groceries
+  regex: "(?i)\\btesco\\b"
+
+- canonical: "Waitrose & Partners"
+  category: groceries
+  regex: "(?i)\\bwaitrose\\b"
+
+# --- Shopping ---
+- canonical: "Amazon"
+  category: shopping
+  regex: "(?i)\\bamazon\\b"
+
+# --- Subscriptions ---
+- canonical: "Netflix"
+  category: subscriptions
+  regex: "(?i)\\bnetflix\\b"
+
+# --- Holidays ---
+- canonical: "Ryanair"
+  category: holidays
+  regex: "(?i)\\bryanair\\b"
+
+# --- Cash / ATM ---
+- canonical: "ATM"
+  category: cash
+  regex: "(?i)\\bcash\\s+withdrawal\\b"

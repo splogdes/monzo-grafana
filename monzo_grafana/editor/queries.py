@@ -110,18 +110,28 @@ def search_outgoings(
     if not (query or "").strip():
         return fetch_recent_outgoings(dsn, limit)
 
-    like = f"%{query.strip()}%"
+    # Each whitespace-separated token must independently match at least one
+    # field — this lets the user combine terms like "tesco 2025-01 42.50".
+    # Strip a leading £ so "£42.50" and "42.50" both hit the amount column.
+    tokens = query.strip().split()
 
     def q(cur: psycopg.Cursor[Any]) -> list[dict[str, Any]]:
+        conditions: list[str] = []
+        params: list[Any] = []
+        for token in tokens:
+            like = f"%{token.lstrip('£')}%"
+            conditions.append(
+                "(id ILIKE %s OR merchant ILIKE %s OR description ILIKE %s"
+                " OR occurred_at::text ILIKE %s OR ROUND(ABS(amount), 2)::text ILIKE %s)"
+            )
+            params.extend([like, like, like, like, like])
+        params.append(limit)
         cur.execute(
             "SELECT id, occurred_at::date, merchant, amount "
             "FROM transactions "
-            "WHERE amount < 0 AND ("
-            "  id ILIKE %s OR merchant ILIKE %s "
-            "  OR description ILIKE %s OR occurred_at::text ILIKE %s"
-            ") "
+            f"WHERE amount < 0 AND {' AND '.join(conditions)} "
             "ORDER BY occurred_at DESC LIMIT %s",
-            (like, like, like, like, limit),
+            params,
         )
         return [
             {"id": r[0], "date": r[1], "merchant": r[2], "amount": float(r[3])}
@@ -139,13 +149,17 @@ def fetch_transactions_by_ids(
 
     def q(cur: psycopg.Cursor[Any]) -> dict[str, dict[str, Any]]:
         cur.execute(
-            "SELECT id, occurred_at::date, merchant, amount, description, category "
+            "SELECT id, occurred_at::date, merchant, amount, description, category, "
+            "group_id, offset_for_tx, offset_for_group "
             "FROM transactions WHERE id = ANY(%s)",
             (tx_ids,),
         )
         return {
-            r[0]: {"date": r[1], "merchant": r[2], "amount": float(r[3]),
-                   "description": r[4], "category": r[5]}
+            r[0]: {
+                "date": r[1], "merchant": r[2], "amount": float(r[3]),
+                "description": r[4], "category": r[5],
+                "group_id": r[6], "offset_for_tx": r[7], "offset_for_group": r[8],
+            }
             for r in cur.fetchall()
         }
 
